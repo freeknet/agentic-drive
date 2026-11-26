@@ -27,6 +27,7 @@ import { formatBytes } from "~/lib/format";
 import { enqueue, onUploaded } from "~/lib/uploads";
 import { AppHeader } from "~/shell/AppHeader";
 import { takeShare, useLaunchFiles } from "~/shell/pwa";
+import { toggleSidebar } from "~/shell/layout";
 import { SidebarFooter, SidebarFrame, SidebarItem, SidebarPrimaryButton } from "~/shell/Sidebar";
 
 
@@ -213,7 +214,7 @@ function Shell() {
 					onClear: () => setQ(""),
 				}}
 				settings={{ onClick: () => setSettingsOpen(true) }}
-				onMenuClick={() => setMobileOpen(true)}
+				onMenuClick={() => toggleSidebar(() => setMobileOpen(true))}
 			/>
 			<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 			<Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
