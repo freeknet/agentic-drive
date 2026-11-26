@@ -31,6 +31,10 @@ export default function PreferencesApplier() {
 	const density = usePrefs((p) => p.density);
 
 	useEffect(() => {
+		void usePrefs.persist.rehydrate();
+	}, []);
+
+	useEffect(() => {
 		const root = document.documentElement;
 		const p = ACCENTS[accent] ?? BLUE;
 		const vars: Record<string, string> = {
