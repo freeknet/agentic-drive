@@ -41,6 +41,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 export const contentUrl = (id: string, download = false) => `/api/files/${id}/content${download ? "?download=1" : ""}`;
 
 export const api = {
+	config: () => request<{ mailUrl: string | null }>("GET", "/api/config"),
 	list: (parentId: string | null) => request<Listing>("GET", `/api/files${parentId ? `?parent=${parentId}` : ""}`),
 	search: (q: string) => request<{ items: Item[] }>("GET", `/api/search?q=${encodeURIComponent(q)}`),
 	trash: () => request<{ items: Item[] }>("GET", "/api/trash"),

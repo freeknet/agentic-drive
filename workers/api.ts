@@ -33,6 +33,9 @@ export function shareExpiry(days: number | null | undefined): number | null {
 	return Date.now() + Math.min(Math.max(d, 1), MAX_SHARE_DAYS) * 86_400_000;
 }
 
+/** Settings the browser needs: where the Mail app lives, for the app switcher. */
+api.get("/config", (c) => c.json({ mailUrl: c.env.MAIL_URL || null }));
+
 // ── browsing ───────────────────────────────────────────────────────
 
 api.get("/files", async (c) => {

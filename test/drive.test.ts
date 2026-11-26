@@ -194,6 +194,12 @@ describe("share links", () => {
 	});
 });
 
+describe("config", () => {
+	it("tells the browser where Mail lives, for the app switcher", async () => {
+		expect((await call("GET", "/api/config")).data).toEqual({ mailUrl: "https://mail.example.com" });
+	});
+});
+
 describe("service binding (used by agentic-inbox)", () => {
 	const svc = () => new DriveService(createExecutionContext(), E);
 

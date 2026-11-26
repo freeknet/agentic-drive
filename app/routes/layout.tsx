@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { ActionsProvider, useActions } from "~/components/actions";
+import { AppSwitcher } from "~/components/AppSwitcher";
 import { UploadPanel } from "~/components/UploadPanel";
 import { useTheme } from "~/hooks/useTheme";
 import { api } from "~/lib/api";
@@ -145,6 +146,7 @@ function Shell() {
 					<MagnifyingGlassIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-kumo-subtle" />
 					<Input aria-label="Search Drive" placeholder="Search Drive" value={q} onChange={(e) => setQ(e.target.value)} className="w-full pl-9" />
 				</form>
+				<AppSwitcher />
 				<Button variant="ghost" shape="square" icon={<ThemeIcon size={20} />} aria-label={`Theme: ${preference} (click to change)`} onClick={cycle} />
 			</header>
 			<div className="flex min-h-0 flex-1">

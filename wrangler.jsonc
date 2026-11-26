@@ -15,7 +15,9 @@
 		"TEAM_DOMAIN": "https://wsllc.cloudflareaccess.com",
 		"POLICY_AUD": "",
 		// Public origin used to build share links.
-		"PUBLIC_URL": "https://drive.midwestfreeks.org"
+		"PUBLIC_URL": "https://drive.midwestfreeks.org",
+		// The agentic-inbox app, for the Mail | Drive switcher (optional).
+		"MAIL_URL": "https://mail.midwestfreeks.org"
 	},
 	"routes": [
 		{ "pattern": "drive.midwestfreeks.org", "custom_domain": true }

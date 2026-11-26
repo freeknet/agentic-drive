@@ -10,7 +10,7 @@ export default defineConfig({
 			main: "./test/worker-entry.ts",
 			remoteBindings: false,
 			miniflare: {
-				bindings: { PUBLIC_URL: "https://drive.example.com" },
+				bindings: { PUBLIC_URL: "https://drive.example.com", MAIL_URL: "https://mail.example.com" },
 			},
 		}),
 	],
