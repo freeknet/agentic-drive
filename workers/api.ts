@@ -3,6 +3,7 @@ import { z } from "zod";
 import { DEFAULT_SHARE_DAYS, FREE_STORAGE_BYTES, MAX_SHARE_DAYS } from "../shared/limits";
 import { errorStatus } from "./drive-do";
 import { abortUpload, beginUpload, completeUpload, serveFile, uploadPart } from "./files";
+import { sameOriginOnly } from "./same-origin";
 import { driveStub, type Env } from "./types";
 
 export const api = new Hono<{ Bindings: Env }>().basePath("/api");
@@ -13,6 +14,10 @@ api.onError((e, c) => {
 	if (status === 500) console.error("API error:", e);
 	return c.json({ error: message }, status);
 });
+
+// CSRF: Access authenticates by cookie, so another site's form or fetch would
+// carry it. Writes must come from this origin.
+api.use("*", sameOriginOnly);
 
 const id = z.uuid();
 const parentId = id.nullable();

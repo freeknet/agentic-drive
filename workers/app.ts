@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { createContext, createRequestHandler, RouterContextProvider } from "react-router";
 import { identify } from "./access";
 import { api } from "./api";
+import { sameOriginOnly } from "./same-origin";
 import { share } from "./share";
 import type { Env } from "./types";
 
@@ -51,6 +52,10 @@ app.use("*", async (c, next) => {
 	if (identify(payload).kind !== "user") return c.text("This Access identity may not use this app", 403);
 	return next();
 });
+
+// CSRF: refuse cross-site writes anywhere in the app (api.ts repeats this so
+// the API is covered on its own too).
+app.use("*", sameOriginOnly);
 
 app.route("/", share);
 app.route("/", api);

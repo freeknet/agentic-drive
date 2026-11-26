@@ -244,3 +244,13 @@ describe("service binding (used by agentic-inbox)", () => {
 		expect((await svc().info()).files).toBe(1);
 	});
 });
+
+describe("cross-site request guard", () => {
+	it("refuses cross-site writes but allows same-origin ones and reads", async () => {
+		const evil = { Origin: "https://evil.test", "Sec-Fetch-Site": "cross-site" };
+		expect((await call("POST", "/api/folders", { parentId: null, name: "x" }, evil)).status).toBe(403);
+		expect((await call("POST", "/api/folders", { parentId: null, name: "x" }, { "Sec-Fetch-Site": "same-site" })).status).toBe(403);
+		expect((await call("POST", "/api/folders", { parentId: null, name: "ok" }, { Origin: BASE, "Sec-Fetch-Site": "same-origin" })).status).toBe(201);
+		expect((await call("GET", "/api/files", undefined, evil)).status).toBe(200);
+	});
+});
