@@ -1,9 +1,4 @@
 import Divider from "@mui/material/Divider";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Typography from "@mui/material/Typography";
 import CreateNewFolderOutlinedIcon from "@mui/icons-material/CreateNewFolderOutlined";
 import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -21,25 +16,12 @@ import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import type { ReactNode } from "react";
 import type { Item } from "~/lib/api";
+import { MenuEntry, PositionedMenu } from "~/shell/View";
 import { useDrive } from "./DriveProvider";
 
 export type MenuTarget =
 	| { kind: "items"; items: Item[]; siblings: Item[]; trash?: boolean }
 	| { kind: "background"; parentId: string | null };
-
-function Entry({ icon, label, hint, onClick, danger }: { icon: ReactNode; label: string; hint?: string; onClick: () => void; danger?: boolean }) {
-	return (
-		<MenuItem onClick={onClick} sx={danger ? { color: "error.main" } : undefined}>
-			<ListItemIcon sx={danger ? { color: "error.main" } : undefined}>{icon}</ListItemIcon>
-			<ListItemText>{label}</ListItemText>
-			{hint && (
-				<Typography variant="body2" sx={{ color: "text.secondary", ml: 3 }}>
-					{hint}
-				</Typography>
-			)}
-		</MenuItem>
-	);
-}
 
 /** Right-click menu, positioned at the pointer. */
 export function ContextMenu({ x, y, target, onClose }: { x: number; y: number; target: MenuTarget; onClose: () => void }) {
@@ -52,14 +34,14 @@ export function ContextMenu({ x, y, target, onClose }: { x: number; y: number; t
 	let entries: ReactNode[] = [];
 	if (target.kind === "background") {
 		entries = [
-			<Entry key="folder" icon={<CreateNewFolderOutlinedIcon fontSize="small" />} label="New folder" hint="Alt+C" onClick={run(() => d.newFolder(target.parentId))} />,
-			<Entry key="upload" icon={<UploadFileOutlinedIcon fontSize="small" />} label="File upload" hint="Alt+U" onClick={run(() => d.uploadFiles(target.parentId))} />,
+			<MenuEntry key="folder" icon={<CreateNewFolderOutlinedIcon fontSize="small" />} label="New folder" hint="Alt+C" onClick={run(() => d.newFolder(target.parentId))} />,
+			<MenuEntry key="upload" icon={<UploadFileOutlinedIcon fontSize="small" />} label="File upload" hint="Alt+U" onClick={run(() => d.uploadFiles(target.parentId))} />,
 		];
 	} else if (target.trash) {
 		const { items } = target;
 		entries = [
-			<Entry key="restore" icon={<RestoreIcon fontSize="small" />} label="Restore" onClick={run(() => d.restore(items))} />,
-			<Entry key="purge" icon={<DeleteForeverOutlinedIcon fontSize="small" />} label="Delete forever" danger onClick={run(() => d.purge(items))} />,
+			<MenuEntry key="restore" icon={<RestoreIcon fontSize="small" />} label="Restore" onClick={run(() => d.restore(items))} />,
+			<MenuEntry key="purge" icon={<DeleteForeverOutlinedIcon fontSize="small" />} label="Delete forever" danger onClick={run(() => d.purge(items))} />,
 		];
 	} else {
 		const { items, siblings } = target;
@@ -69,25 +51,25 @@ export function ContextMenu({ x, y, target, onClose }: { x: number; y: number; t
 		entries = [
 			one &&
 				(one.kind === "folder" ? (
-					<Entry key="open" icon={<OpenInNewIcon fontSize="small" />} label="Open" hint="Enter" onClick={run(() => d.open(one))} />
+					<MenuEntry key="open" icon={<OpenInNewIcon fontSize="small" />} label="Open" hint="Enter" onClick={run(() => d.open(one))} />
 				) : (
-					<Entry key="preview" icon={<VisibilityOutlinedIcon fontSize="small" />} label="Preview" hint="Enter" onClick={run(() => d.preview(one, siblings))} />
+					<MenuEntry key="preview" icon={<VisibilityOutlinedIcon fontSize="small" />} label="Preview" hint="Enter" onClick={run(() => d.preview(one, siblings))} />
 				)),
-			hasFiles && <Entry key="download" icon={<DownloadOutlinedIcon fontSize="small" />} label="Download" onClick={run(() => d.download(items))} />,
-			one && <Entry key="rename" icon={<DriveFileRenameOutlineIcon fontSize="small" />} label="Rename" hint="F2" onClick={run(() => d.rename(one))} />,
+			hasFiles && <MenuEntry key="download" icon={<DownloadOutlinedIcon fontSize="small" />} label="Download" onClick={run(() => d.download(items))} />,
+			one && <MenuEntry key="rename" icon={<DriveFileRenameOutlineIcon fontSize="small" />} label="Rename" hint="F2" onClick={run(() => d.rename(one))} />,
 			one?.kind === "file" && <Divider key="d1" />,
-			one?.kind === "file" && <Entry key="link" icon={<LinkIcon fontSize="small" />} label="Copy link" onClick={run(() => d.copyLink(one))} />,
-			one?.kind === "file" && <Entry key="share" icon={<PersonAddAltOutlinedIcon fontSize="small" />} label="Share" onClick={run(() => d.share(one))} />,
+			one?.kind === "file" && <MenuEntry key="link" icon={<LinkIcon fontSize="small" />} label="Copy link" onClick={run(() => d.copyLink(one))} />,
+			one?.kind === "file" && <MenuEntry key="share" icon={<PersonAddAltOutlinedIcon fontSize="small" />} label="Share" onClick={run(() => d.share(one))} />,
 			<Divider key="d2" />,
-			<Entry key="move" icon={<DriveFileMoveOutlinedIcon fontSize="small" />} label="Move" onClick={run(() => d.move(items))} />,
-			<Entry
+			<MenuEntry key="move" icon={<DriveFileMoveOutlinedIcon fontSize="small" />} label="Move" onClick={run(() => d.move(items))} />,
+			<MenuEntry
 				key="star"
 				icon={allStarred ? <StarOutlineIcon fontSize="small" /> : <StarBorderIcon fontSize="small" />}
 				label={allStarred ? "Remove from Starred" : "Add to Starred"}
 				onClick={run(() => d.star(items, !allStarred))}
 			/>,
 			one && (
-				<Entry
+				<MenuEntry
 					key="details"
 					icon={<InfoOutlinedIcon fontSize="small" />}
 					label="File information"
@@ -98,24 +80,13 @@ export function ContextMenu({ x, y, target, onClose }: { x: number; y: number; t
 				/>
 			),
 			<Divider key="d3" />,
-			<Entry key="trash" icon={<DeleteOutlineIcon fontSize="small" />} label="Move to trash" hint="Delete" onClick={run(() => d.trash(items))} />,
+			<MenuEntry key="trash" icon={<DeleteOutlineIcon fontSize="small" />} label="Move to trash" hint="Delete" onClick={run(() => d.trash(items))} />,
 		].filter(Boolean);
 	}
 
 	return (
-		<Menu
-			open
-			onClose={onClose}
-			anchorReference="anchorPosition"
-			anchorPosition={{ top: y, left: x }}
-			onContextMenu={(e) => {
-				// A second right-click closes the menu instead of opening the browser's.
-				e.preventDefault();
-				onClose();
-			}}
-			slotProps={{ paper: { sx: { minWidth: 260 } }, list: { dense: true } }}
-		>
+		<PositionedMenu x={x} y={y} onClose={onClose}>
 			{entries}
-		</Menu>
+		</PositionedMenu>
 	);
 }

@@ -39,20 +39,9 @@ import { ConfirmDialog } from "~/components/dialogs";
 import { useDrive } from "~/components/DriveProvider";
 import { ItemsView, type Mode } from "~/components/ItemsView";
 import { api, ApiError, type Item, type Listing } from "~/lib/api";
+import { ActionButton, EmptyState, SelectionBar, ViewHeader, ViewTitle } from "~/shell/View";
 
 const DRAG_TYPE = "application/x-drive-items";
-
-function Empty({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
-	return (
-		<Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", maxWidth: 380, color: "text.secondary" }}>
-			{icon}
-			<Typography variant="h6" sx={{ color: "text.primary" }}>
-				{title}
-			</Typography>
-			<Typography variant="body2">{body}</Typography>
-		</Stack>
-	);
-}
 
 /** A breadcrumb that items can be dropped on to move them there. */
 function Crumb({ id, name, current, items }: { id: string | null; name: string; current: boolean; items: Item[] }) {
@@ -126,75 +115,53 @@ export default function View() {
 
 	const header =
 		selected.length > 0 ? (
-			<Stack direction="row" spacing={0.5} sx={{ alignItems: "center", bgcolor: "action.hover", borderRadius: 999, px: 1, minHeight: 48 }} role="toolbar" aria-label="Selection actions">
-				<IconButton aria-label="Clear selection" onClick={d.clearSelection}>
-					<CloseIcon />
-				</IconButton>
-				<Typography sx={{ mr: 1.5, whiteSpace: "nowrap" }}>{selected.length} selected</Typography>
+			<SelectionBar count={selected.length} onClear={d.clearSelection}>
 				{trash ? (
 					<>
-						<Tooltip title="Restore">
-							<IconButton aria-label="Restore" onClick={() => d.restore(selected)}>
-								<RestoreIcon />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Delete forever">
-							<IconButton aria-label="Delete forever" onClick={() => d.purge(selected)}>
-								<DeleteForeverOutlinedIcon />
-							</IconButton>
-						</Tooltip>
+						<ActionButton title="Restore" onClick={() => d.restore(selected)}>
+							<RestoreIcon />
+						</ActionButton>
+						<ActionButton title="Delete forever" onClick={() => d.purge(selected)}>
+							<DeleteForeverOutlinedIcon />
+						</ActionButton>
 					</>
 				) : (
 					<>
 						{selected.length === 1 && selected[0].kind === "file" && (
 							<>
-								<Tooltip title="Share">
-									<IconButton aria-label="Share" onClick={() => d.share(selected[0])}>
-										<PersonAddAltOutlinedIcon />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Copy link">
-									<IconButton aria-label="Copy link" onClick={() => d.copyLink(selected[0])}>
-										<LinkIcon />
-									</IconButton>
-								</Tooltip>
+								<ActionButton title="Share" onClick={() => d.share(selected[0])}>
+									<PersonAddAltOutlinedIcon />
+								</ActionButton>
+								<ActionButton title="Copy link" onClick={() => d.copyLink(selected[0])}>
+									<LinkIcon />
+								</ActionButton>
 							</>
 						)}
 						{selected.some((i) => i.kind === "file") && (
-							<Tooltip title="Download">
-								<IconButton aria-label="Download" onClick={() => d.download(selected)}>
-									<DownloadOutlinedIcon />
-								</IconButton>
-							</Tooltip>
+							<ActionButton title="Download" onClick={() => d.download(selected)}>
+								<DownloadOutlinedIcon />
+							</ActionButton>
 						)}
-						<Tooltip title="Move">
-							<IconButton aria-label="Move" onClick={() => d.move(selected)}>
-								<DriveFileMoveOutlinedIcon />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Move to trash">
-							<IconButton aria-label="Move to trash" onClick={() => d.trash(selected)}>
-								<DeleteOutlineIcon />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="More actions">
-							<IconButton
-								aria-label="More actions"
-								onClick={(e) => {
-									const r = e.currentTarget.getBoundingClientRect();
-									d.openMenu({ clientX: r.left, clientY: r.bottom }, { kind: "items", items: selected, siblings: items });
-								}}
-							>
-								<MoreVertIcon />
-							</IconButton>
-						</Tooltip>
+						<ActionButton title="Move" onClick={() => d.move(selected)}>
+							<DriveFileMoveOutlinedIcon />
+						</ActionButton>
+						<ActionButton title="Move to trash" onClick={() => d.trash(selected)}>
+							<DeleteOutlineIcon />
+						</ActionButton>
+						<ActionButton
+							title="More actions"
+							onClick={(e) => {
+								const r = e.currentTarget.getBoundingClientRect();
+								d.openMenu({ clientX: r.left, clientY: r.bottom }, { kind: "items", items: selected, siblings: items });
+							}}
+						>
+							<MoreVertIcon />
+						</ActionButton>
 					</>
 				)}
-			</Stack>
+			</SelectionBar>
 		) : title ? (
-			<Typography sx={{ fontSize: 22, px: 1.5, py: 0.5 }} noWrap>
-				{title}
-			</Typography>
+			<ViewTitle>{title}</ViewTitle>
 		) : (
 			<Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} maxItems={4} aria-label="Folder path" sx={{ minWidth: 0, "& ol": { flexWrap: "nowrap" } }}>
 				<Crumb id={null} name="My Drive" current={!query.data?.listing?.breadcrumbs.length} items={items} />
@@ -206,15 +173,15 @@ export default function View() {
 
 	const empty =
 		mode === "trash" ? (
-			<Empty icon={<DeleteOutlineIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title="Nothing in the trash" body="Move items you don't need to the trash. Items in the trash are deleted forever after 30 days." />
+			<EmptyState icon={<DeleteOutlineIcon />} title="Nothing in the trash" body="Move items you don't need to the trash. Items in the trash are deleted forever after 30 days." />
 		) : mode === "starred" ? (
-			<Empty icon={<StarBorderIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title="No starred files" body="Add stars to things you want to find easily later. Right-click a file and choose Add to Starred." />
+			<EmptyState icon={<StarBorderIcon />} title="No starred files" body="Add stars to things you want to find easily later. Right-click a file and choose Add to Starred." />
 		) : mode === "recent" ? (
-			<Empty icon={<AccessTimeIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title="No recent files" body="Files you upload or change show up here." />
+			<EmptyState icon={<AccessTimeIcon />} title="No recent files" body="Files you upload or change show up here." />
 		) : mode === "search" ? (
-			<Empty icon={<SearchOffIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title="No matching results" body="Search looks at file and folder names." />
+			<EmptyState icon={<SearchOffIcon />} title="No matching results" body="Search looks at file and folder names." />
 		) : (
-			<Empty icon={<CloudUploadOutlinedIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title={folderId ? "This folder is empty" : "Welcome to Drive"} body="Drop files here, or use the New button. Right-click for more options." />
+			<EmptyState icon={<CloudUploadOutlinedIcon />} title={folderId ? "This folder is empty" : "Welcome to Drive"} body="Drop files here, or use the New button. Right-click for more options." />
 		);
 
 	const notFound = query.error instanceof ApiError && query.error.status === 404;
@@ -222,8 +189,7 @@ export default function View() {
 	return (
 		<Box sx={{ flex: 1, minWidth: 0, display: "flex", gap: 2 }}>
 			<Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", bgcolor: "background.paper", borderRadius: { md: 4 }, overflow: "hidden" }}>
-				<Stack direction="row" spacing={1} sx={{ alignItems: "center", px: { xs: 1, sm: 2 }, pt: 1.5, pb: 1, minHeight: 64 }}>
-					<Box sx={{ flex: 1, minWidth: 0 }}>{header}</Box>
+				<ViewHeader title={header}>
 					{trash && items.length > 0 && selected.length === 0 && (
 						<Button onClick={() => setConfirmEmpty(true)}>Empty trash</Button>
 					)}
@@ -247,7 +213,7 @@ export default function View() {
 							<InfoOutlinedIcon />
 						</IconButton>
 					</Tooltip>
-				</Stack>
+				</ViewHeader>
 				{trash && (
 					<Alert severity="info" icon={false} sx={{ mx: 2, mb: 1, borderRadius: 3, bgcolor: "action.hover", color: "text.secondary" }}>
 						Items in the trash are deleted forever after 30 days. Their share links stop working right away.
@@ -261,7 +227,7 @@ export default function View() {
 						</Stack>
 					) : notFound ? (
 						<Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-							<Empty icon={<FolderOffOutlinedIcon sx={{ fontSize: 96, opacity: 0.4 }} />} title="Folder not found" body="It may have been moved to the trash or deleted." />
+							<EmptyState icon={<FolderOffOutlinedIcon />} title="Folder not found" body="It may have been moved to the trash or deleted." />
 						</Stack>
 					) : (
 						<ItemsView items={items} mode={mode} parentId={parentId} empty={empty} />
