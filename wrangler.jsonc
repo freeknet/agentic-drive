@@ -1,0 +1,46 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "agentic-drive",
+	"compatibility_date": "2026-11-01",
+	"main": "./workers/app.ts",
+	"observability": {
+		"enabled": true
+	},
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		// Cloudflare Access: team domain and the audience tag of the "agentic-drive"
+		// Access app (not secrets). The Worker fails closed in production without them.
+		"TEAM_DOMAIN": "https://wsllc.cloudflareaccess.com",
+		"POLICY_AUD": "",
+		// Public origin used to build share links.
+		"PUBLIC_URL": "https://drive.midwestfreeks.org"
+	},
+	"routes": [
+		{ "pattern": "drive.midwestfreeks.org", "custom_domain": true }
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "agentic-drive",
+			"preview_bucket_name": "agentic-drive"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "DRIVE",
+				"class_name": "DriveDO"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"DriveDO"
+			]
+		}
+	]
+}
