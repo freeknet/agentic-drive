@@ -13,12 +13,14 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Typography from "@mui/material/Typography";
 import { ACCENTS, FONT_SIZES, usePrefs, type Accent, type DefaultView, type Density, type FontSize } from "~/lib/prefs";
+import { useDrive } from "./DriveProvider";
 
 const caption = { display: "block", mb: 0.75 } as const;
 
 /** Appearance and behaviour settings, stored in this browser. */
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
 	const prefs = usePrefs();
+	const drive = useDrive();
 
 	return (
 		<Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -84,7 +86,12 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
 					size="small"
 					label="Default view"
 					value={prefs.defaultView}
-					onChange={(e) => prefs.set("defaultView", e.target.value as DefaultView)}
+					onChange={(e) => {
+						const v = e.target.value as DefaultView;
+						prefs.set("defaultView", v);
+						// The toolbar's grid/list choice is remembered separately; apply this now so it isn't overridden.
+						drive.setView(v);
+					}}
 					sx={{ mb: 2.5 }}
 				>
 					<MenuItem value="list">List</MenuItem>
