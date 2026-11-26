@@ -14,14 +14,30 @@ import CloseIcon from "@mui/icons-material/Close";
 import ErrorIcon from "@mui/icons-material/Error";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fileKind, formatBytes, KIND_STYLE } from "~/lib/format";
 import { cancel, clearFinished, useUploads } from "~/lib/uploads";
+import { useDrive } from "./DriveProvider";
 
 /** Bottom-right upload tray, like Drive's. */
 export function UploadPanel() {
 	const uploads = useUploads();
+	const drive = useDrive();
 	const [open, setOpen] = useState(true);
+	const wasActive = useRef(false);
+
+	// One toast when the queue drains, so the result is visible even collapsed.
+	useEffect(() => {
+		const active = uploads.some((u) => u.state === "queued" || u.state === "uploading");
+		if (wasActive.current && !active) {
+			const failed = uploads.filter((u) => u.state === "error").length;
+			const done = uploads.filter((u) => u.state === "done").length;
+			if (failed) drive.notify(`${failed} upload${failed === 1 ? "" : "s"} failed`, { severity: "error" });
+			else if (done) drive.notify(`Uploaded ${done} item${done === 1 ? "" : "s"}`);
+		}
+		wasActive.current = active;
+	}, [uploads, drive]);
+
 	if (uploads.length === 0) return null;
 
 	const active = uploads.filter((u) => u.state === "queued" || u.state === "uploading");

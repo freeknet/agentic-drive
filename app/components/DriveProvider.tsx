@@ -232,6 +232,7 @@ export function DriveProvider({ children, navigateTo }: { children: ReactNode; n
 					onSubmit={async (name) => {
 						await api.createFolder(dialog.parentId, name);
 						refresh();
+						notify(`Folder "${name}" created`);
 					}}
 				/>
 			)}
@@ -245,6 +246,7 @@ export function DriveProvider({ children, navigateTo }: { children: ReactNode; n
 					onSubmit={async (name) => {
 						await api.rename(dialog.item.id, name);
 						refresh();
+						notify(`Renamed to "${name}"`);
 					}}
 				/>
 			)}
