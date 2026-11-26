@@ -1,88 +1,184 @@
-import { Button, DropdownMenu, Input } from "@cloudflare/kumo";
-import {
-	CircleHalfIcon,
-	FolderPlusIcon,
-	HardDrivesIcon,
-	MagnifyingGlassIcon,
-	MoonIcon,
-	PlusIcon,
-	SunIcon,
-	TrashIcon,
-	UploadSimpleIcon,
-} from "@phosphor-icons/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Drawer from "@mui/material/Drawer";
+import Fab from "@mui/material/Fab";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import LinearProgress from "@mui/material/LinearProgress";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useColorScheme } from "@mui/material/styles";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AddIcon from "@mui/icons-material/Add";
+import AddToDriveIcon from "@mui/icons-material/AddToDrive";
+import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
+import CloudOutlinedIcon from "@mui/icons-material/CloudOutlined";
+import CloseIcon from "@mui/icons-material/Close";
+import CreateNewFolderOutlinedIcon from "@mui/icons-material/CreateNewFolderOutlined";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
-import { ActionsProvider, useActions } from "~/components/actions";
-import { AppSwitcher } from "~/components/AppSwitcher";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useMatches, useNavigate, useParams, useSearchParams } from "react-router";
+import { AppsMenu } from "~/components/AppsMenu";
+import { DriveProvider, useDrive } from "~/components/DriveProvider";
 import { UploadPanel } from "~/components/UploadPanel";
-import { useTheme } from "~/hooks/useTheme";
 import { api } from "~/lib/api";
 import { formatBytes } from "~/lib/format";
 import { enqueue, onUploaded } from "~/lib/uploads";
+
+const DRAWER = 256;
+
+/** The folder new items go into, or undefined where nothing can be created (Recent, Trash…). */
+function useCreateTarget(): string | null | undefined {
+	const { folderId } = useParams();
+	const id = useMatches().at(-1)?.id;
+	if (id === "my-drive") return null;
+	if (id === "folder") return folderId ?? null;
+	return undefined;
+}
+
+function ThemeToggle() {
+	const { mode, setMode } = useColorScheme();
+	if (!mode) return <Box sx={{ width: 40 }} />;
+	const next = mode === "system" ? "light" : mode === "light" ? "dark" : "system";
+	const Icon = mode === "dark" ? DarkModeOutlinedIcon : mode === "light" ? LightModeOutlinedIcon : BrightnessAutoIcon;
+	return (
+		<Tooltip title={`Theme: ${mode} (switch to ${next})`}>
+			<IconButton aria-label={`Theme: ${mode}`} onClick={() => setMode(next)}>
+				<Icon />
+			</IconButton>
+		</Tooltip>
+	);
+}
 
 function StorageMeter() {
 	const { data } = useQuery({ queryKey: ["stats"], queryFn: api.stats });
 	if (!data) return null;
 	const pct = Math.min(100, (data.bytes / data.limit) * 100);
-	const color = pct > 90 ? "bg-kumo-danger" : pct > 75 ? "bg-kumo-warning" : "bg-kumo-brand";
 	return (
-		<div className="px-3 text-xs text-kumo-subtle">
-			<div className="h-1.5 overflow-hidden rounded-full bg-kumo-fill" role="meter" aria-label="Storage used" aria-valuenow={data.bytes} aria-valuemin={0} aria-valuemax={data.limit}>
-				<div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-			</div>
-			<div className="mt-1.5">
-				{formatBytes(data.bytes)} of {formatBytes(data.limit)} free tier
-			</div>
-			{data.trashBytes > 0 && <div>{formatBytes(data.trashBytes)} in the trash</div>}
-		</div>
-	);
-}
-
-function NewMenu({ folderId }: { folderId: string | null }) {
-	const a = useActions();
-	const fileInput = useRef<HTMLInputElement>(null);
-	return (
-		<>
-			<input
-				ref={fileInput}
-				type="file"
-				multiple
-				hidden
-				onChange={(e) => {
-					if (e.target.files?.length) enqueue(e.target.files, folderId);
-					e.target.value = "";
-				}}
+		<Box sx={{ px: 3, py: 2 }}>
+			<Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+				<CloudOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
+				<Typography variant="body2">Storage</Typography>
+			</Stack>
+			<LinearProgress
+				variant="determinate"
+				value={pct}
+				color={pct > 90 ? "error" : pct > 75 ? "warning" : "primary"}
+				aria-label="Storage used"
+				sx={{ height: 4, borderRadius: 2, mb: 1 }}
 			/>
-			<DropdownMenu>
-				<DropdownMenu.Trigger render={<Button variant="primary" icon={<PlusIcon size={16} weight="bold" />}>New</Button>} />
-				<DropdownMenu.Content align="start">
-					<DropdownMenu.Item icon={UploadSimpleIcon} onClick={() => fileInput.current?.click()}>
-						Upload files
-					</DropdownMenu.Item>
-					<DropdownMenu.Item icon={FolderPlusIcon} onClick={() => a.newFolder(folderId)}>
-						New folder
-					</DropdownMenu.Item>
-				</DropdownMenu.Content>
-			</DropdownMenu>
-		</>
+			<Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+				{formatBytes(data.bytes)} of {formatBytes(data.limit)} used
+			</Typography>
+			{data.trashBytes > 0 && (
+				<Typography variant="caption" sx={{ color: "text.secondary" }}>
+					{formatBytes(data.trashBytes)} in the trash
+				</Typography>
+			)}
+		</Box>
 	);
 }
 
-const navClass = ({ isActive }: { isActive: boolean }) =>
-	`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-kumo-tint font-medium text-kumo-default" : "text-kumo-subtle hover:bg-kumo-tint hover:text-kumo-default"}`;
+function NewMenu({ anchor, onClose, parentId }: { anchor: HTMLElement | null; onClose: () => void; parentId: string | null }) {
+	const d = useDrive();
+	return (
+		<Menu open={!!anchor} anchorEl={anchor} onClose={onClose} slotProps={{ paper: { sx: { minWidth: 240 } }, list: { dense: true } }}>
+			<MenuItem
+				onClick={() => {
+					onClose();
+					d.newFolder(parentId);
+				}}
+			>
+				<ListItemIcon>
+					<CreateNewFolderOutlinedIcon fontSize="small" />
+				</ListItemIcon>
+				<ListItemText>New folder</ListItemText>
+				<Typography variant="body2" sx={{ color: "text.secondary" }}>
+					Alt+C
+				</Typography>
+			</MenuItem>
+			<MenuItem
+				onClick={() => {
+					onClose();
+					d.uploadFiles(parentId);
+				}}
+			>
+				<ListItemIcon>
+					<UploadFileOutlinedIcon fontSize="small" />
+				</ListItemIcon>
+				<ListItemText>File upload</ListItemText>
+				<Typography variant="body2" sx={{ color: "text.secondary" }}>
+					Alt+U
+				</Typography>
+			</MenuItem>
+		</Menu>
+	);
+}
+
+const NAV = [
+	{ to: "/", label: "My Drive", icon: <HomeOutlinedIcon />, match: (p: string) => p === "/" || p.startsWith("/folder/") },
+	{ to: "/recent", label: "Recent", icon: <AccessTimeIcon />, match: (p: string) => p === "/recent" },
+	{ to: "/starred", label: "Starred", icon: <StarBorderIcon />, match: (p: string) => p === "/starred" },
+	{ to: "/trash", label: "Trash", icon: <DeleteOutlineIcon />, match: (p: string) => p === "/trash" },
+];
+
+function Sidebar({ createTarget, onNavigate }: { createTarget: string | null | undefined; onNavigate?: () => void }) {
+	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+	const { pathname } = useLocation();
+	return (
+		<Stack sx={{ height: 1, py: 1 }}>
+			<Box sx={{ px: 2, pb: 2 }}>
+				<Button
+					variant="contained"
+					color="inherit"
+					startIcon={<AddIcon />}
+					onClick={(e) => setAnchor(e.currentTarget)}
+					sx={{ borderRadius: 4, px: 2.5, py: 1.75, bgcolor: "background.paper", color: "text.primary", boxShadow: 2, "&:hover": { bgcolor: "action.hover", boxShadow: 4 } }}
+				>
+					New
+				</Button>
+				<NewMenu anchor={anchor} onClose={() => setAnchor(null)} parentId={createTarget ?? null} />
+			</Box>
+			<List component="nav" aria-label="Drive sections" sx={{ px: 1 }}>
+				{NAV.map((n) => (
+					<ListItemButton key={n.to} component={NavLink} to={n.to} selected={n.match(pathname)} onClick={onNavigate} sx={{ mb: 0.25, py: 0.5 }}>
+						<ListItemIcon sx={{ minWidth: 40 }}>{n.icon}</ListItemIcon>
+						<ListItemText primary={n.label} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: n.match(pathname) ? 600 : 400 } } }} />
+					</ListItemButton>
+				))}
+			</List>
+			<Box sx={{ mt: "auto" }}>
+				<StorageMeter />
+			</Box>
+		</Stack>
+	);
+}
 
 function Shell() {
-	const { folderId = null } = useParams();
-	const location = useLocation();
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 	const [q, setQ] = useState(params.get("q") ?? "");
-	const { preference, cycle } = useTheme();
-	const qc = useQueryClient();
+	const [mobileOpen, setMobileOpen] = useState(false);
+	const [fabAnchor, setFabAnchor] = useState<HTMLElement | null>(null);
 	const [dragging, setDragging] = useState(false);
-	const inTrash = location.pathname.startsWith("/trash");
-	const canDrop = !inTrash && !location.pathname.startsWith("/search");
+	const createTarget = useCreateTarget();
+	const qc = useQueryClient();
 
 	useEffect(() => {
 		const off = onUploaded(() => void qc.invalidateQueries());
@@ -91,29 +187,30 @@ function Shell() {
 		};
 	}, [qc]);
 
-	// Drop files anywhere on a folder view to upload them there.
+	// Drop files from the computer anywhere on a folder view to upload them there.
 	useEffect(() => {
 		let depth = 0;
-		const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes("Files");
+		const external = (e: DragEvent) => !!e.dataTransfer?.types.includes("Files");
 		const enter = (e: DragEvent) => {
-			if (!hasFiles(e) || !canDrop) return;
+			if (!external(e) || createTarget === undefined) return;
 			depth++;
 			setDragging(true);
 		};
-		const leave = () => {
+		const leave = (e: DragEvent) => {
+			if (!external(e)) return;
 			depth = Math.max(0, depth - 1);
 			if (depth === 0) setDragging(false);
 		};
 		const over = (e: DragEvent) => {
-			if (hasFiles(e) && canDrop) e.preventDefault();
+			if (external(e) && createTarget !== undefined) e.preventDefault();
 		};
 		const drop = (e: DragEvent) => {
-			if (!hasFiles(e) || !canDrop) return;
+			if (!external(e) || createTarget === undefined) return;
 			e.preventDefault();
 			depth = 0;
 			setDragging(false);
-			const files = [...(e.dataTransfer?.files ?? [])].filter((f) => f.size > 0 || f.type);
-			if (files.length) enqueue(files, folderId);
+			const files = [...(e.dataTransfer?.files ?? [])];
+			if (files.length) enqueue(files, createTarget);
 		};
 		window.addEventListener("dragenter", enter);
 		window.addEventListener("dragleave", leave);
@@ -125,72 +222,110 @@ function Shell() {
 			window.removeEventListener("dragover", over);
 			window.removeEventListener("drop", drop);
 		};
-	}, [folderId, canDrop]);
-
-	const ThemeIcon = preference === "dark" ? MoonIcon : preference === "light" ? SunIcon : CircleHalfIcon;
+	}, [createTarget]);
 
 	return (
-		<div className="flex h-dvh flex-col">
-			<header className="flex items-center gap-3 border-b border-kumo-line bg-kumo-base px-4 py-2">
-				<NavLink to="/" className="flex shrink-0 items-center gap-2 font-semibold">
-					<HardDrivesIcon size={24} weight="duotone" className="text-kumo-brand" />
-					<span className="hidden sm:inline">Drive</span>
-				</NavLink>
-				<form
-					className="relative mx-auto w-full max-w-xl"
+		<Box sx={{ display: "flex", flexDirection: "column", height: "100dvh", bgcolor: "background.default" }}>
+			<Stack component="header" direction="row" spacing={1} sx={{ alignItems: "center", px: { xs: 1, sm: 2 }, py: 1, height: 64 }}>
+				<IconButton aria-label="Open navigation" onClick={() => setMobileOpen(true)} sx={{ display: { md: "none" } }}>
+					<MenuIcon />
+				</IconButton>
+				<Stack component={NavLink} to="/" direction="row" spacing={1} sx={{ alignItems: "center", textDecoration: "none", color: "text.primary", width: { md: DRAWER - 16 }, flexShrink: 0 }}>
+					<AddToDriveIcon sx={{ fontSize: 40, color: "#1a73e8" }} />
+					<Typography variant="h6" sx={{ display: { xs: "none", sm: "block" }, color: "text.secondary" }}>
+						Drive
+					</Typography>
+				</Stack>
+				<Box
+					component="form"
+					role="search"
+					sx={{ flex: 1, maxWidth: 720 }}
 					onSubmit={(e) => {
 						e.preventDefault();
 						if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`);
 					}}
 				>
-					<MagnifyingGlassIcon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-kumo-subtle" />
-					<Input aria-label="Search Drive" placeholder="Search Drive" value={q} onChange={(e) => setQ(e.target.value)} className="w-full pl-9" />
-				</form>
-				<AppSwitcher />
-				<Button variant="ghost" shape="square" icon={<ThemeIcon size={20} />} aria-label={`Theme: ${preference} (click to change)`} onClick={cycle} />
-			</header>
-			<div className="flex min-h-0 flex-1">
-				<aside className="hidden w-60 shrink-0 flex-col gap-4 border-r border-kumo-line bg-kumo-base py-4 md:flex">
-					<div className="px-3">{!inTrash && <NewMenu folderId={folderId} />}</div>
-					<nav className="flex flex-col gap-0.5 px-2" aria-label="Drive sections">
-						<NavLink to="/" end className={({ isActive }) => navClass({ isActive: isActive || location.pathname.startsWith("/folder/") })}>
-							<HardDrivesIcon size={18} /> My Drive
-						</NavLink>
-						<NavLink to="/trash" className={navClass}>
-							<TrashIcon size={18} /> Trash
-						</NavLink>
-					</nav>
-					<div className="mt-auto">
-						<StorageMeter />
-					</div>
-				</aside>
-				<main className="relative min-w-0 flex-1 overflow-y-auto px-4 py-4 md:px-8">
-					<nav className="mb-3 flex items-center gap-2 md:hidden" aria-label="Drive sections">
-						{!inTrash && <NewMenu folderId={folderId} />}
-						<NavLink to="/" end className={navClass}>
-							My Drive
-						</NavLink>
-						<NavLink to="/trash" className={navClass}>
-							Trash
-						</NavLink>
-					</nav>
+					<TextField
+						fullWidth
+						size="small"
+						placeholder="Search in Drive"
+						value={q}
+						onChange={(e) => setQ(e.target.value)}
+						slotProps={{
+							htmlInput: { "aria-label": "Search in Drive" },
+							input: {
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon />
+									</InputAdornment>
+								),
+								endAdornment: q ? (
+									<InputAdornment position="end">
+										<IconButton size="small" aria-label="Clear search" onClick={() => setQ("")}>
+											<CloseIcon fontSize="small" />
+										</IconButton>
+									</InputAdornment>
+								) : undefined,
+								sx: { borderRadius: 999, bgcolor: "action.hover", "& fieldset": { border: 0 }, height: 48 },
+							},
+						}}
+					/>
+				</Box>
+				<Box sx={{ flex: { md: 1 } }} />
+				<ThemeToggle />
+				<AppsMenu />
+			</Stack>
+			<Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+				<Box component="nav" sx={{ width: { md: DRAWER }, flexShrink: 0, display: { xs: "none", md: "block" } }}>
+					<Sidebar createTarget={createTarget} />
+				</Box>
+				<Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} sx={{ display: { md: "none" } }} slotProps={{ paper: { sx: { width: DRAWER, bgcolor: "background.default" } } }}>
+					<Sidebar createTarget={createTarget} onNavigate={() => setMobileOpen(false)} />
+				</Drawer>
+				<Box component="main" sx={{ flex: 1, minWidth: 0, display: "flex", pr: { md: 2 }, pb: { md: 2 } }}>
 					<Outlet />
-				</main>
-			</div>
+				</Box>
+			</Box>
+			{createTarget !== undefined && (
+				<>
+					<Fab color="secondary" aria-label="New" onClick={(e) => setFabAnchor(e.currentTarget)} sx={{ position: "fixed", right: 16, bottom: 24, display: { md: "none" }, borderRadius: 4 }}>
+						<AddIcon />
+					</Fab>
+					<NewMenu anchor={fabAnchor} onClose={() => setFabAnchor(null)} parentId={createTarget} />
+				</>
+			)}
 			{dragging && (
-				<div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-kumo-brand/10 outline-4 -outline-offset-8 outline-dashed outline-kumo-brand">
-					<div className="rounded-xl bg-kumo-base px-6 py-4 text-sm font-medium shadow-lg">Drop to upload here</div>
-				</div>
+				<Box
+					sx={{
+						pointerEvents: "none",
+						position: "fixed",
+						inset: 0,
+						zIndex: (t) => t.zIndex.modal,
+						bgcolor: "rgba(11,87,208,0.08)",
+						border: "3px solid",
+						borderColor: "primary.main",
+						display: "flex",
+						alignItems: "flex-end",
+						justifyContent: "center",
+						pb: 6,
+					}}
+				>
+					<Stack direction="row" spacing={1} sx={{ alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", px: 3, py: 1.5, borderRadius: 999, boxShadow: 4 }}>
+						<UploadFileOutlinedIcon />
+						<Typography sx={{ fontWeight: 500 }}>Drop files to upload them here</Typography>
+					</Stack>
+				</Box>
 			)}
 			<UploadPanel />
-		</div>
+		</Box>
 	);
 }
 
 export default function Layout() {
+	const navigate = useNavigate();
 	return (
-		<ActionsProvider>
+		<DriveProvider navigateTo={navigate}>
 			<Shell />
-		</ActionsProvider>
+		</DriveProvider>
 	);
 }

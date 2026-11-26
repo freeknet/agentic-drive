@@ -1,71 +1,112 @@
-import { Button } from "@cloudflare/kumo";
-import { CaretDownIcon, CaretUpIcon, CheckCircleIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
+import ErrorIcon from "@mui/icons-material/Error";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useState } from "react";
-import { formatBytes } from "~/lib/format";
+import { fileKind, formatBytes, KIND_STYLE } from "~/lib/format";
 import { cancel, clearFinished, useUploads } from "~/lib/uploads";
 
+/** Bottom-right upload tray, like Drive's. */
 export function UploadPanel() {
 	const uploads = useUploads();
-	const [collapsed, setCollapsed] = useState(false);
+	const [open, setOpen] = useState(true);
 	if (uploads.length === 0) return null;
 
-	const active = uploads.filter((u) => u.state === "queued" || u.state === "uploading").length;
+	const active = uploads.filter((u) => u.state === "queued" || u.state === "uploading");
 	const done = uploads.filter((u) => u.state === "done").length;
 	const failed = uploads.filter((u) => u.state === "error").length;
-	const title = active
-		? `Uploading ${active} file${active === 1 ? "" : "s"}`
+	const title = active.length
+		? `Uploading ${active.length} item${active.length === 1 ? "" : "s"}`
 		: failed
 			? `${failed} upload${failed === 1 ? "" : "s"} failed`
 			: `${done} upload${done === 1 ? "" : "s"} complete`;
+	const totalBytes = active.reduce((n, u) => n + u.size, 0);
+	const sentBytes = active.reduce((n, u) => n + u.sent, 0);
 
 	return (
-		<div className="fixed bottom-4 right-4 z-40 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-kumo-line bg-kumo-base shadow-lg">
-			<div className="flex items-center gap-1 border-b border-kumo-line px-3 py-2">
-				<span className="flex-1 text-sm font-medium" role="status">
+		<Paper elevation={6} sx={{ position: "fixed", right: { xs: 8, sm: 24 }, bottom: 0, width: "min(360px, calc(100vw - 16px))", borderRadius: "16px 16px 0 0", overflow: "hidden", zIndex: (t) => t.zIndex.snackbar - 1 }}>
+			<Stack direction="row" sx={{ alignItems: "center", pl: 2.5, pr: 1, py: 1, bgcolor: "background.default" }}>
+				<Typography role="status" sx={{ flex: 1, fontWeight: 500 }}>
 					{title}
-				</span>
-				<Button
-					variant="ghost"
-					shape="square"
-					size="sm"
-					icon={collapsed ? <CaretUpIcon size={16} /> : <CaretDownIcon size={16} />}
-					aria-label={collapsed ? "Show uploads" : "Hide uploads"}
-					onClick={() => setCollapsed(!collapsed)}
-				/>
-				{!active && <Button variant="ghost" shape="square" size="sm" icon={<XIcon size={16} />} aria-label="Close" onClick={clearFinished} />}
-			</div>
-			{!collapsed && (
-				<ul className="max-h-64 overflow-y-auto">
+				</Typography>
+				<IconButton aria-label={open ? "Collapse uploads" : "Expand uploads"} onClick={() => setOpen(!open)}>
+					{open ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+				</IconButton>
+				{!active.length && (
+					<IconButton aria-label="Close uploads" onClick={clearFinished}>
+						<CloseIcon />
+					</IconButton>
+				)}
+			</Stack>
+			{active.length > 0 && (
+				<Box sx={{ px: 2.5, py: 0.75, bgcolor: "action.hover" }}>
+					<Typography variant="caption" sx={{ color: "text.secondary" }}>
+						{formatBytes(sentBytes)} of {formatBytes(totalBytes)}
+					</Typography>
+				</Box>
+			)}
+			<Collapse in={open}>
+				<List dense sx={{ maxHeight: 280, overflow: "auto" }}>
 					{uploads.map((u) => {
-						const pct = u.size ? Math.round((u.sent / u.size) * 100) : 100;
+						const { icon: Icon, color } = KIND_STYLE[fileKind({ kind: "file", mime: null, name: u.name })];
+						const pct = u.size ? (u.sent / u.size) * 100 : 100;
 						return (
-							<li key={u.key} className="border-b border-kumo-line px-3 py-2 last:border-b-0">
-								<div className="flex items-center gap-2">
-									<span className="min-w-0 flex-1 truncate text-sm">{u.name}</span>
-									{u.state === "done" && <CheckCircleIcon size={18} weight="fill" className="text-kumo-success" />}
-									{u.state === "error" && <WarningCircleIcon size={18} weight="fill" className="text-kumo-danger" />}
-									{(u.state === "queued" || u.state === "uploading") && (
-										<Button variant="ghost" shape="square" size="sm" icon={<XIcon size={14} />} aria-label={`Cancel ${u.name}`} onClick={() => cancel(u.key)} />
-									)}
-								</div>
-								{u.state === "uploading" && (
-									<>
-										<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-kumo-fill">
-											<div className="h-full rounded-full bg-kumo-brand transition-[width]" style={{ width: `${pct}%` }} />
-										</div>
-										<div className="mt-0.5 text-xs text-kumo-subtle">
-											{formatBytes(u.sent)} of {formatBytes(u.size)}
-										</div>
-									</>
-								)}
-								{u.state === "queued" && <div className="text-xs text-kumo-subtle">Waiting…</div>}
-								{u.state === "cancelled" && <div className="text-xs text-kumo-subtle">Cancelled</div>}
-								{u.state === "error" && <div className="text-xs text-kumo-danger">{u.error}</div>}
-							</li>
+							<ListItem
+								key={u.key}
+								secondaryAction={
+									u.state === "done" ? (
+										<CheckCircleIcon sx={{ color: "success.main" }} />
+									) : u.state === "error" ? (
+										<Tooltip title={u.error ?? "Failed"}>
+											<ErrorIcon sx={{ color: "error.main" }} />
+										</Tooltip>
+									) : u.state === "cancelled" ? (
+										<Typography variant="caption" sx={{ color: "text.secondary" }}>
+											Cancelled
+										</Typography>
+									) : (
+										<IconButton edge="end" aria-label={`Cancel ${u.name}`} onClick={() => cancel(u.key)}>
+											<CancelOutlinedIcon />
+										</IconButton>
+									)
+								}
+							>
+								<Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0, flex: 1, pr: 1 }}>
+									<Icon sx={{ color, fontSize: 20 }} />
+									<Box sx={{ minWidth: 0, flex: 1 }}>
+										<Typography variant="body2" noWrap title={u.name}>
+											{u.name}
+										</Typography>
+										{u.state === "uploading" && <LinearProgress variant="determinate" value={pct} sx={{ mt: 0.5, borderRadius: 1 }} />}
+										{u.state === "queued" && (
+											<Typography variant="caption" sx={{ color: "text.secondary" }}>
+												Waiting…
+											</Typography>
+										)}
+										{u.state === "error" && (
+											<Typography variant="caption" sx={{ color: "error.main" }}>
+												{u.error}
+											</Typography>
+										)}
+									</Box>
+								</Stack>
+							</ListItem>
 						);
 					})}
-				</ul>
-			)}
-		</div>
+				</List>
+			</Collapse>
+		</Paper>
 	);
 }

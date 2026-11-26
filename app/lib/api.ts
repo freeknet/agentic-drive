@@ -10,6 +10,7 @@ export type Item = {
 	created_at: number;
 	updated_at: number;
 	trashed_at: number | null;
+	starred: number;
 	parent_name?: string | null;
 };
 
@@ -45,6 +46,10 @@ export const api = {
 	list: (parentId: string | null) => request<Listing>("GET", `/api/files${parentId ? `?parent=${parentId}` : ""}`),
 	search: (q: string) => request<{ items: Item[] }>("GET", `/api/search?q=${encodeURIComponent(q)}`),
 	trash: () => request<{ items: Item[] }>("GET", "/api/trash"),
+	recent: () => request<{ items: Item[] }>("GET", "/api/recent"),
+	starred: () => request<{ items: Item[] }>("GET", "/api/starred"),
+	setStarred: (id: string, starred: boolean) => request<Item>("PATCH", `/api/files/${id}`, { starred }),
+	getItem: (id: string) => request<Item>("GET", `/api/files/${id}`),
 	stats: () => request<Stats>("GET", "/api/stats"),
 	createFolder: (parentId: string | null, name: string) => request<Item>("POST", "/api/folders", { parentId, name }),
 	rename: (id: string, name: string) => request<Item>("PATCH", `/api/files/${id}`, { name }),

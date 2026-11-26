@@ -1,17 +1,16 @@
-import {
-	FileArchiveIcon,
-	FileAudioIcon,
-	FileCodeIcon,
-	FileDocIcon,
-	FileIcon,
-	FileImageIcon,
-	FilePdfIcon,
-	FileTextIcon,
-	FileVideoIcon,
-	FileXlsIcon,
-	FolderSimpleIcon,
-	type Icon,
-} from "@phosphor-icons/react";
+import ArticleIcon from "@mui/icons-material/Article";
+import AudioFileIcon from "@mui/icons-material/AudioFile";
+import CodeIcon from "@mui/icons-material/Code";
+import DescriptionIcon from "@mui/icons-material/Description";
+import FolderIcon from "@mui/icons-material/Folder";
+import FolderZipIcon from "@mui/icons-material/FolderZip";
+import ImageIcon from "@mui/icons-material/Image";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import MovieIcon from "@mui/icons-material/Movie";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import SlideshowIcon from "@mui/icons-material/Slideshow";
+import TableChartIcon from "@mui/icons-material/TableChart";
+import type { SvgIconComponent } from "@mui/icons-material";
 import type { Item } from "./api";
 
 export function formatBytes(n: number): string {
@@ -33,36 +32,68 @@ export function formatDate(ms: number): string {
 	return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" });
 }
 
-export function iconFor(item: Pick<Item, "kind" | "mime" | "name">): Icon {
-	if (item.kind === "folder") return FolderSimpleIcon;
-	const m = item.mime ?? "";
-	const ext = item.name.split(".").pop()?.toLowerCase() ?? "";
-	if (m.startsWith("image/")) return FileImageIcon;
-	if (m.startsWith("video/")) return FileVideoIcon;
-	if (m.startsWith("audio/")) return FileAudioIcon;
-	if (m === "application/pdf") return FilePdfIcon;
-	if (/zip|tar|gzip|7z|rar/.test(m) || ["zip", "tar", "gz", "7z", "rar"].includes(ext)) return FileArchiveIcon;
-	if (/sheet|excel|csv/.test(m) || ["xlsx", "xls", "csv"].includes(ext)) return FileXlsIcon;
-	if (/word|document|rtf/.test(m) || ["doc", "docx", "odt", "rtf"].includes(ext)) return FileDocIcon;
-	if (/json|javascript|typescript|xml|html|css/.test(m) || ["js", "ts", "tsx", "py", "rs", "go", "json", "html", "css"].includes(ext)) return FileCodeIcon;
-	if (m.startsWith("text/")) return FileTextIcon;
-	return FileIcon;
+export function formatDateTime(ms: number): string {
+	return new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
+
+export type FileKind = "folder" | "image" | "video" | "audio" | "pdf" | "archive" | "sheet" | "slides" | "doc" | "code" | "text" | "file";
+
+const EXT: Record<string, FileKind> = {
+	zip: "archive", tar: "archive", gz: "archive", "7z": "archive", rar: "archive",
+	xlsx: "sheet", xls: "sheet", csv: "sheet", ods: "sheet",
+	pptx: "slides", ppt: "slides", key: "slides", odp: "slides",
+	doc: "doc", docx: "doc", odt: "doc", rtf: "doc", pages: "doc",
+	js: "code", ts: "code", tsx: "code", jsx: "code", py: "code", rs: "code", go: "code", json: "code", html: "code", css: "code", sh: "code", yml: "code", yaml: "code",
+	md: "text", txt: "text", log: "text",
+};
+
+export function fileKind(item: Pick<Item, "kind" | "mime" | "name">): FileKind {
+	if (item.kind === "folder") return "folder";
+	const m = item.mime ?? "";
+	if (m.startsWith("image/")) return "image";
+	if (m.startsWith("video/")) return "video";
+	if (m.startsWith("audio/")) return "audio";
+	if (m === "application/pdf") return "pdf";
+	const ext = item.name.split(".").pop()?.toLowerCase() ?? "";
+	if (EXT[ext]) return EXT[ext];
+	if (/zip|compressed|tar/.test(m)) return "archive";
+	if (/sheet|excel|csv/.test(m)) return "sheet";
+	if (/presentation|powerpoint/.test(m)) return "slides";
+	if (/word|document/.test(m)) return "doc";
+	if (m.startsWith("text/")) return "text";
+	return "file";
+}
+
+/** Icon and colour per kind, after Google Drive's file-type colours. */
+export const KIND_STYLE: Record<FileKind, { icon: SvgIconComponent; color: string; label: string }> = {
+	folder: { icon: FolderIcon, color: "#5f6368", label: "Folder" },
+	image: { icon: ImageIcon, color: "#d93025", label: "Image" },
+	video: { icon: MovieIcon, color: "#d93025", label: "Video" },
+	audio: { icon: AudioFileIcon, color: "#d93025", label: "Audio" },
+	pdf: { icon: PictureAsPdfIcon, color: "#ea4335", label: "PDF" },
+	archive: { icon: FolderZipIcon, color: "#5f6368", label: "Archive" },
+	sheet: { icon: TableChartIcon, color: "#188038", label: "Spreadsheet" },
+	slides: { icon: SlideshowIcon, color: "#f9ab00", label: "Presentation" },
+	doc: { icon: ArticleIcon, color: "#1a73e8", label: "Document" },
+	code: { icon: CodeIcon, color: "#5f6368", label: "Code" },
+	text: { icon: DescriptionIcon, color: "#1a73e8", label: "Text" },
+	file: { icon: InsertDriveFileIcon, color: "#5f6368", label: "File" },
+};
 
 export type PreviewKind = "image" | "video" | "audio" | "pdf" | "text" | null;
 
-export function previewKind(item: Pick<Item, "kind" | "mime" | "size">): PreviewKind {
+export function previewKind(item: Pick<Item, "kind" | "mime" | "size" | "name">): PreviewKind {
 	if (item.kind !== "file") return null;
 	const m = item.mime ?? "";
 	if (m.startsWith("image/") && m !== "image/svg+xml") return "image";
 	if (m.startsWith("video/")) return "video";
 	if (m.startsWith("audio/")) return "audio";
 	if (m === "application/pdf") return "pdf";
-	if ((m.startsWith("text/") && m !== "text/html") || m === "application/json") return item.size <= 2 * 1024 * 1024 ? "text" : null;
+	const k = fileKind(item);
+	if ((k === "text" || k === "code" || m === "application/json") && m !== "text/html") return item.size <= 2 * 1024 * 1024 ? "text" : null;
 	return null;
 }
 
-/** Guess a type for files the browser reports without one. */
 export function mimeFor(file: File): string {
 	if (file.type) return file.type;
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";

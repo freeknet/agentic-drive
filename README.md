@@ -8,6 +8,19 @@ attachments to Drive and send big files as links.
 
 ## Features
 
+- A Material Design 3 interface (MUI v9) modelled on Google Drive: My Drive,
+  Recent, Starred and Trash; list and grid views with image thumbnails;
+  sortable columns; a details panel; light, dark or system theme; works on
+  phones (drawer and New button).
+- **Right-click menus** on files, folders and selections (Preview, Download,
+  Rename, Copy link, Share, Move, Star, File information, Move to trash), on
+  trashed items (Restore, Delete forever) and on empty space (New folder, File
+  upload).
+- **Multi-select** with click, Ctrl/Cmd-click and Shift-click, with a selection
+  bar; **drag items onto a folder or a breadcrumb** to move them; Undo in the
+  snackbar for moves, stars and trashing.
+- **Keyboard:** Delete (trash), F2 (rename), Enter (open), Ctrl+A, Esc,
+  Alt+C (new folder), Alt+U (upload), arrows in the preview.
 - Folders, upload (button or drag and drop anywhere), download, rename, move.
 - Files up to 5 GB: the browser uploads 50 MiB parts through an R2 multipart
   upload, so no request comes near the 100 MB request cap. Progress, cancel,
