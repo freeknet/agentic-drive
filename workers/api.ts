@@ -66,9 +66,18 @@ api.post("/folders", async (c) => {
 });
 
 api.patch("/files/:id", async (c) => {
-	const b = await body(c, z.object({ name: z.string().optional(), parentId: parentId.optional() }));
-	return c.json(await driveStub(c.env).update(id.parse(c.req.param("id")), b));
+	const b = await body(c, z.object({ name: z.string().optional(), parentId: parentId.optional(), starred: z.boolean().optional() }));
+	const drive = driveStub(c.env);
+	const itemId = id.parse(c.req.param("id"));
+	const { starred, ...rest } = b;
+	let item = starred === undefined ? null : await drive.setStarred(itemId, starred);
+	if (rest.name !== undefined || rest.parentId !== undefined) item = await drive.update(itemId, rest);
+	return item ? c.json(item) : c.json(await drive.getItem(itemId));
 });
+
+api.get("/recent", async (c) => c.json({ items: await driveStub(c.env).listRecent(Number(c.req.query("limit") ?? 50) || 50) }));
+
+api.get("/starred", async (c) => c.json({ items: await driveStub(c.env).listStarred() }));
 
 /** Move to the trash, or with ?permanent=1 delete a trashed item for good. */
 api.delete("/files/:id", async (c) => {

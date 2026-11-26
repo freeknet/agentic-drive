@@ -141,6 +141,23 @@ describe("trash", () => {
 	});
 });
 
+describe("starred and recent", () => {
+	it("stars items without changing their modified time, and lists recent files", async () => {
+		const a = await upload("a.txt", "a");
+		const dir = (await call("POST", "/api/folders", { parentId: null, name: "Keep" })).data;
+		const b = await upload("b.txt", "b");
+		const starred = (await call("PATCH", `/api/files/${a.id}`, { starred: true })).data;
+		expect(starred.starred).toBe(1);
+		expect(starred.updated_at).toBe(a.updated_at);
+		await call("PATCH", `/api/files/${dir.id}`, { starred: true });
+		expect((await call("GET", "/api/starred")).data.items.map((i: any) => i.name)).toEqual(["Keep", "a.txt"]);
+		expect((await call("GET", "/api/recent")).data.items.map((i: any) => i.name)).toEqual(["b.txt", "a.txt"]);
+		await call("DELETE", `/api/files/${a.id}`);
+		expect((await call("GET", "/api/starred")).data.items.map((i: any) => i.name)).toEqual(["Keep"]);
+		expect((await call("GET", "/api/recent")).data.items.map((i: any) => i.name)).toEqual([b.name]);
+	});
+});
+
 describe("search", () => {
 	it("finds by name and treats % and _ literally", async () => {
 		await upload("Budget 2026.xlsx", "x");

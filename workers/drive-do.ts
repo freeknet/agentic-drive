@@ -17,6 +17,8 @@ export type Item = {
 	trashed_at: number | null;
 	trash_root: string | null;
 	source: string | null;
+	/** 1 when starred. */
+	starred: number;
 };
 
 export type Upload = {
@@ -90,6 +92,9 @@ const MIGRATIONS = [
 		downloads INTEGER NOT NULL DEFAULT 0
 	);
 	CREATE INDEX IF NOT EXISTS shares_item ON shares (item_id);`,
+	// Starred items and the Recent view.
+	`ALTER TABLE items ADD COLUMN starred INTEGER NOT NULL DEFAULT 0;
+	CREATE INDEX IF NOT EXISTS items_updated ON items (updated_at);`,
 ];
 
 const DAY_MS = 86_400_000;
@@ -175,6 +180,34 @@ export class DriveDO extends DurableObject<Env> {
 			),
 		] as Item[];
 		return { folder, breadcrumbs: this.breadcrumbs(folder), items };
+	}
+
+	/** Files changed most recently, newest first. */
+	listRecent(limit = 50): Item[] {
+		return [
+			...this.sql.exec<Item>(
+				`SELECT i.*, p.name AS parent_name FROM items i LEFT JOIN items p ON p.id = i.parent_id
+				 WHERE i.kind = 'file' AND i.trashed_at IS NULL ORDER BY i.updated_at DESC, i.rowid DESC LIMIT ?`,
+				Math.min(Math.max(limit, 1), 200),
+			),
+		] as Item[];
+	}
+
+	listStarred(): Item[] {
+		return [
+			...this.sql.exec<Item>(
+				`SELECT i.*, p.name AS parent_name FROM items i LEFT JOIN items p ON p.id = i.parent_id
+				 WHERE i.starred = 1 AND i.trashed_at IS NULL ORDER BY i.kind = 'file', i.name COLLATE NOCASE`,
+			),
+		] as Item[];
+	}
+
+	/** Star or unstar without touching the modified time. */
+	setStarred(id: string, starred: boolean): Item {
+		const item = this.row(id);
+		if (!item || item.trashed_at) throw new DriveError("Not found", 404);
+		this.sql.exec("UPDATE items SET starred = ? WHERE id = ?", starred ? 1 : 0, id);
+		return this.row(id)!;
 	}
 
 	listTrash(): Item[] {
