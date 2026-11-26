@@ -52,7 +52,9 @@ inside Cloudflare and can't be called from the internet.
 3. Zero Trust → Access → Applications:
    - a self-hosted app for `drive.<your domain>` with an allow policy for your
      email; put its **Application Audience (AUD) tag** in `POLICY_AUD` in
-     `wrangler.jsonc`;
+     `wrangler.jsonc`. Keep it a separate app from the inbox's: Access's team
+     session already means one sign-in covers both, and a shared app would make
+     every Mail login hop through the Drive hostname too;
    - a second self-hosted app for `drive.<your domain>/s` with a **Bypass**
      policy for Everyone, so share links open without a login.
 4. Set `PUBLIC_URL` and the `routes` pattern in `wrangler.jsonc` to your host.

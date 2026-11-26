@@ -11,9 +11,10 @@
 	],
 	"vars": {
 		// Cloudflare Access: team domain and the audience tag of the "agentic-drive"
-		// Access app (not secrets). The Worker fails closed in production without them.
+		// Access app (not secrets). Access's team session means a sign-in to Mail also
+		// covers Drive, with no second login. The Worker fails closed without them.
 		"TEAM_DOMAIN": "https://wsllc.cloudflareaccess.com",
-		"POLICY_AUD": "",
+		"POLICY_AUD": "5eb493f6652938813d9b24aa646f397c0c78267ff150bf15f2785023bef53220",
 		// Public origin used to build share links.
 		"PUBLIC_URL": "https://drive.midwestfreeks.org",
 		// The agentic-inbox app, for the Mail | Drive switcher (optional).
