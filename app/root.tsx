@@ -10,6 +10,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { ApiError } from "~/lib/api";
+import { ConfirmHost } from "~/lib/confirm";
+import PreferencesApplier from "~/components/PreferencesApplier";
 import { theme } from "~/theme";
 
 function makeQueryClient() {
@@ -47,7 +49,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<InitColorSchemeScript attribute="class" defaultMode="system" />
 				<ThemeProvider theme={theme} defaultMode="system">
 					<CssBaseline enableColorScheme />
+					<PreferencesApplier />
 					{children}
+					<ConfirmHost />
 				</ThemeProvider>
 				<ScrollRestoration />
 				<Scripts />

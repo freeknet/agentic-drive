@@ -65,6 +65,9 @@ export function useDrive(): Drive {
 	return d;
 }
 
+import { usePrefs } from "~/lib/prefs";
+import { confirmDialog } from "~/lib/confirm";
+
 const VIEW_KEY = "drive-view";
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
 const label = (items: Item[]) => (items.length === 1 ? `"${items[0].name}"` : plural(items.length, "item"));
@@ -75,7 +78,8 @@ export function DriveProvider({ children, navigateTo }: { children: ReactNode; n
 	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [view, setViewState] = useState<ViewMode>(() => {
 		try {
-			return (typeof window !== "undefined" && (localStorage.getItem(VIEW_KEY) as ViewMode)) || "list";
+			const stored = typeof window !== "undefined" ? (localStorage.getItem(VIEW_KEY) as ViewMode | null) : null;
+			return stored || usePrefs.getState().defaultView;
 		} catch {
 			return "list";
 		}
@@ -181,6 +185,15 @@ export function DriveProvider({ children, navigateTo }: { children: ReactNode; n
 					api.setStarred(i.id, !on),
 				),
 			trash: async (items) => {
+				if (usePrefs.getState().confirmTrash) {
+					const ok = await confirmDialog({
+						title: items.length === 1 ? `Move "${items[0].name}" to the trash?` : `Move ${items.length} items to the trash?`,
+						body: "Trashed items are deleted for good after 30 days. You can restore them from Trash.",
+						confirmLabel: "Move to trash",
+						destructive: true,
+					});
+					if (!ok) return;
+				}
 				await batch(items, (i) => api.trashItem(i.id), `Moved ${label(items)} to the trash`, (i) => api.restore(i.id));
 				setSelected(new Set());
 			},

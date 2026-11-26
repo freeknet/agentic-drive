@@ -18,6 +18,7 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from "react";
 import { contentUrl, type Item } from "~/lib/api";
+import { usePrefs } from "~/lib/prefs";
 import { fileKind, formatBytes, formatDate, KIND_STYLE } from "~/lib/format";
 import { useDrive } from "./DriveProvider";
 
@@ -52,6 +53,8 @@ function ItemIcon({ item, size = 24 }: { item: Item; size?: number }) {
  */
 export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mode: Mode; parentId?: string | null; empty: ReactNode }) {
 	const d = useDrive();
+	const density = usePrefs((p) => p.density);
+	const tileMin = density === "compact" ? 176 : 200;
 	const [sortKey, setSortKey] = useState<SortKey | null>(mode === "recent" ? null : "name");
 	const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 	const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -221,7 +224,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 		return (
 			<Box {...background} sx={{ flex: 1, pb: 12 }}>
 				{folders.length > 0 && section("Folders")}
-				<Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 2 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin}px, 1fr))`, gap: 2 }}>
 					{folders.map((f) => (
 						<Card
 							key={f.id}
@@ -244,7 +247,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 					))}
 				</Box>
 				{files.length > 0 && section("Files")}
-				<Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 2 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin}px, 1fr))`, gap: 2 }}>
 					{files.map((f) => {
 						const isImage = (f.mime ?? "").startsWith("image/") && f.mime !== "image/svg+xml" && f.size < 15 * 1024 * 1024;
 						return (
@@ -287,7 +290,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 
 	return (
 		<Box {...background} sx={{ flex: 1, pb: 12 }}>
-			<Table size="small" stickyHeader sx={{ tableLayout: "fixed", "& td, & th": { borderColor: "divider" } }} aria-label="Files">
+			<Table size={density === "compact" ? "small" : "medium"} stickyHeader sx={{ tableLayout: "fixed", "& td, & th": { borderColor: "divider" } }} aria-label="Files">
 				<TableHead>
 					<TableRow>
 						<TableCell sx={{ bgcolor: "background.default" }}>

@@ -29,6 +29,7 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,7 @@ import { UploadPanel } from "~/components/UploadPanel";
 import { api } from "~/lib/api";
 import { formatBytes } from "~/lib/format";
 import { enqueue, onUploaded } from "~/lib/uploads";
+import { SettingsDialog } from "~/components/SettingsDialog";
 
 const DRAWER = 256;
 
@@ -177,6 +179,7 @@ function Shell() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [fabAnchor, setFabAnchor] = useState<HTMLElement | null>(null);
 	const [dragging, setDragging] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const createTarget = useCreateTarget();
 	const qc = useQueryClient();
 
@@ -273,8 +276,14 @@ function Shell() {
 				</Box>
 				<Box sx={{ flex: { md: 1 } }} />
 				<ThemeToggle />
+				<Tooltip title="Settings">
+					<IconButton aria-label="Settings" onClick={() => setSettingsOpen(true)}>
+						<SettingsOutlinedIcon />
+					</IconButton>
+				</Tooltip>
 				<AppsMenu />
 			</Stack>
+			<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 			<Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
 				<Box component="nav" sx={{ width: { md: DRAWER }, flexShrink: 0, display: { xs: "none", md: "block" } }}>
 					<Sidebar createTarget={createTarget} />
