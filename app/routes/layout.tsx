@@ -26,6 +26,7 @@ import { api } from "~/lib/api";
 import { formatBytes } from "~/lib/format";
 import { enqueue, onUploaded } from "~/lib/uploads";
 import { AppHeader } from "~/shell/AppHeader";
+import { takeShare, useLaunchFiles } from "~/shell/pwa";
 import { SidebarFooter, SidebarFrame, SidebarItem, SidebarPrimaryButton } from "~/shell/Sidebar";
 
 
@@ -138,6 +139,19 @@ function Shell() {
 	const createTarget = useCreateTarget();
 	const qc = useQueryClient();
 	const { data: config } = useQuery({ queryKey: ["config"], queryFn: api.config, staleTime: Number.POSITIVE_INFINITY });
+
+	// Installed app: files opened with Drive ("Open with") or shared to it go into My Drive.
+	useLaunchFiles((files) => enqueue(files, null));
+	const shareId = params.get("share");
+	useEffect(() => {
+		if (!shareId) return;
+		takeShare(shareId)
+			.then((shared) => {
+				if (shared?.files.length) enqueue(shared.files, null);
+			})
+			.catch(() => {})
+			.finally(() => navigate("/", { replace: true }));
+	}, [shareId, navigate]);
 
 	useEffect(() => {
 		const off = onUploaded(() => void qc.invalidateQueries());
