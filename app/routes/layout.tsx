@@ -28,6 +28,7 @@ import { enqueue, onUploaded } from "~/lib/uploads";
 import { AppHeader } from "~/shell/AppHeader";
 import { takeShare, useLaunchFiles } from "~/shell/pwa";
 import { toggleSidebar } from "~/shell/layout";
+import { DriveShortcuts } from "~/components/DriveShortcuts";
 import { SidebarFooter, SidebarFrame, SidebarItem, SidebarPrimaryButton } from "~/shell/Sidebar";
 
 
@@ -217,6 +218,7 @@ function Shell() {
 				onMenuClick={() => toggleSidebar(() => setMobileOpen(true))}
 			/>
 			<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+			<DriveShortcuts createTarget={createTarget} mailUrl={config?.mailUrl} onSettings={() => setSettingsOpen(true)} />
 			<Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
 				<SidebarFrame open={mobileOpen} onClose={() => setMobileOpen(false)}>
 					<SidebarContents createTarget={createTarget} onNavigate={() => setMobileOpen(false)} />

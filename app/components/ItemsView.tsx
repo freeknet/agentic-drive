@@ -159,6 +159,12 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 				e.preventDefault();
 				if (trash) d.purge(sel);
 				else void d.trash(sel);
+			} else if (e.key === "s" && !e.ctrlKey && !e.metaKey && !e.altKey && sel.length && !trash) {
+				e.preventDefault();
+				void d.star(sel, !sel.every((i) => i.starred));
+			} else if (e.key === "m" && !e.ctrlKey && !e.metaKey && !e.altKey && sel.length && !trash) {
+				e.preventDefault();
+				d.move(sel);
 			} else if (e.key === "F2" && sel.length === 1 && !trash) {
 				e.preventDefault();
 				d.rename(sel[0]);
