@@ -206,11 +206,18 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 		);
 	}
 
-	const selectedSx = (id: string) => ({
-		bgcolor: d.selected.has(id) ? "action.selected" : dropTarget === id ? (t: { palette: { primary: { main: string } } }) => alpha(t.palette.primary.main, 0.16) : "action.hover",
-		outline: dropTarget === id ? "2px solid" : undefined,
-		outlineColor: "primary.main",
-	});
+	const selectedSx = (id: string) => {
+		const selected = d.selected.has(id);
+		return {
+			bgcolor: selected || dropTarget === id ? (t: { palette: { primary: { main: string } } }) => alpha(t.palette.primary.main, 0.24) : "action.hover",
+			outline: "2px solid",
+			outlineOffset: -2,
+			// Only a selected item or a drop target gets a ring.
+			outlineColor: dropTarget === id ? "primary.main" : selected ? "primary.main" : "transparent",
+			transition: "background-color .15s, outline-color .15s, box-shadow .15s",
+			"&:hover": selected ? {} : { bgcolor: "action.selected", boxShadow: 1 },
+		};
+	};
 
 	const sortBy = (key: SortKey) => {
 		if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -240,7 +247,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 							onClick={(e) => onItemClick(f, e)}
 							onDoubleClick={() => d.open(f, sorted)}
 							onContextMenu={(e) => onItemContextMenu(f, e)}
-							sx={{ display: "flex", alignItems: "center", gap: 1.5, pl: 2, pr: 0.5, height: 48, cursor: "default", userSelect: "none", border: 0, ...selectedSx(f.id) }}
+							sx={{ display: "flex", alignItems: "center", gap: 1.5, pl: 2, pr: 0.5, height: 52, borderRadius: 3, cursor: "default", userSelect: "none", border: 0, ...selectedSx(f.id) }}
 						>
 							<ItemIcon item={f} />
 							<Typography noWrap sx={{ flex: 1, fontSize: 14, fontWeight: 500 }}>
@@ -263,9 +270,9 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 								onClick={(e) => onItemClick(f, e)}
 								onDoubleClick={() => d.open(f, sorted)}
 								onContextMenu={(e) => onItemContextMenu(f, e)}
-								sx={{ p: 1, pt: 0.5, cursor: "default", userSelect: "none", border: 0, borderRadius: 3, ...selectedSx(f.id) }}
+								sx={{ p: 1, pt: 0.25, cursor: "default", userSelect: "none", border: 0, borderRadius: 3, display: "flex", flexDirection: "column", ...selectedSx(f.id) }}
 							>
-								<Stack direction="row" spacing={1} sx={{ alignItems: "center", pl: 1, height: 44 }}>
+								<Stack direction="row" spacing={1} sx={{ alignItems: "center", pl: 1, height: 44, minWidth: 0 }}>
 									<ItemIcon item={f} size={20} />
 									<Typography noWrap sx={{ flex: 1, fontSize: 14, fontWeight: 500 }} title={f.name}>
 										{f.name}
@@ -274,14 +281,27 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 										<MoreVertIcon fontSize="small" />
 									</IconButton>
 								</Stack>
-								<Box sx={{ aspectRatio: "4 / 3", borderRadius: 2, overflow: "hidden", bgcolor: "background.paper", display: "flex", alignItems: "center", justifyContent: "center" }}>
-									<Thumbnail item={f} fallback={<ItemIcon item={f} size={64} />} />
+								<Box
+									sx={{
+										aspectRatio: "4 / 3",
+										borderRadius: 2,
+										overflow: "hidden",
+										// A soft wash of the file type's colour behind its icon (photos cover it).
+										bgcolor: (t) => alpha(KIND_STYLE[fileKind(f)].color, t.palette.mode === "dark" ? 0.16 : 0.08),
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+								>
+									<Thumbnail item={f} fallback={<ItemIcon item={f} size={48} />} />
 								</Box>
-								<Typography variant="caption" sx={{ display: "block", px: 1, pt: 0.75, color: "text.secondary" }} noWrap>
-									{f.starred ? "★ " : ""}
-									{formatBytes(f.size)} · {formatDate(trash && f.trashed_at ? f.trashed_at : f.updated_at)}
-									{mode === "search" || mode === "recent" || mode === "starred" ? ` · ${f.parent_name ?? ""}` : ""}
-								</Typography>
+								<Stack direction="row" spacing={0.75} sx={{ alignItems: "center", px: 1, pt: 1, pb: 0.25, minWidth: 0 }}>
+									<Typography variant="caption" sx={{ color: "text.secondary", flex: 1, minWidth: 0 }} noWrap>
+										{formatDate(trash && f.trashed_at ? f.trashed_at : f.updated_at)} · {formatBytes(f.size)}
+										{mode === "search" || mode === "recent" || mode === "starred" ? ` · ${f.parent_name ?? "My Drive"}` : ""}
+									</Typography>
+									{f.starred ? <StarIcon aria-label="Starred" sx={{ fontSize: 16, color: "#f4b400", flexShrink: 0 }} /> : null}
+								</Stack>
 							</Card>
 						);
 					})}

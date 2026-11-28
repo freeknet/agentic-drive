@@ -42,7 +42,21 @@ export function Thumbnail({ item, fit = "cover", fallback }: { item: Item; fit?:
 		<Box sx={{ position: "relative", width: 1, height: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
 			{state === "loading" && <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{fallback}</Box>}
 			{kind === "image" ? (
-				<Box component="img" src={src} alt="" loading="lazy" decoding="async" draggable={false} onLoad={() => setState("ok")} onError={() => setState("failed")} sx={media} />
+				<Box
+					component="img"
+					src={src}
+					alt=""
+					loading="lazy"
+					decoding="async"
+					draggable={false}
+					// A cached image can finish before React is listening; catch that too.
+					ref={(el: HTMLImageElement | null) => {
+						if (el?.complete && state === "loading") setState(el.naturalWidth > 0 ? "ok" : "failed");
+					}}
+					onLoad={() => setState("ok")}
+					onError={() => setState("failed")}
+					sx={media}
+				/>
 			) : (
 				<>
 					{/* #t=1 asks for the frame at one second; only the metadata and that frame are fetched (Range). */}
