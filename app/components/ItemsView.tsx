@@ -22,6 +22,7 @@ import { usePrefs } from "~/lib/prefs";
 import { fileKind, formatBytes, formatDate, KIND_STYLE } from "~/lib/format";
 import { useDrive } from "./DriveProvider";
 import { Thumbnail } from "~/components/Thumbnail";
+import { rainbowFor } from "~/theme";
 
 export type Mode = "browse" | "recent" | "starred" | "search" | "trash";
 type SortKey = "name" | "updated" | "size";
@@ -45,7 +46,8 @@ function isTyping(): boolean {
 
 function ItemIcon({ item, size = 24 }: { item: Item; size?: number }) {
 	const { icon: Icon, color } = KIND_STYLE[fileKind(item)];
-	return <Icon sx={{ fontSize: size, color, flexShrink: 0 }} />;
+	// Folders get a steady rainbow colour each, so they're easy to tell apart.
+	return <Icon sx={{ fontSize: size, color: item.kind === "folder" ? rainbowFor(item.id) : color, flexShrink: 0 }} />;
 }
 
 /**

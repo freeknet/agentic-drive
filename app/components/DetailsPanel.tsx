@@ -38,7 +38,7 @@ export function DetailsPanel({ items }: { items: Item[] }) {
 	const style = one ? KIND_STYLE[fileKind(one)] : null;
 
 	return (
-		<Box component="aside" aria-label="File information" sx={{ width: { xs: 1, md: 340 }, flexShrink: 0, bgcolor: "background.paper", borderRadius: { md: 4 }, p: 2.5, overflow: "auto" }}>
+		<Box component="aside" aria-label="File information" sx={{ width: { xs: 1, md: 340 }, flexShrink: 0, bgcolor: "background.paper", borderRadius: { md: 3 }, p: 2.5, overflow: "auto" }}>
 			<Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 2 }}>
 				{style && one ? <style.icon sx={{ color: style.color }} /> : <InfoOutlinedIcon sx={{ color: "text.secondary" }} />}
 				<Typography noWrap sx={{ flex: 1, fontWeight: 500 }} title={one?.name}>

@@ -33,6 +33,11 @@ import Button from "@mui/material/Button";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { DriveShortcuts } from "~/components/DriveShortcuts";
 import { SidebarFooter, SidebarFrame, SidebarItem, SidebarPrimaryButton } from "~/shell/Sidebar";
+import SpeedDial from "@mui/material/SpeedDial";
+import SpeedDialAction from "@mui/material/SpeedDialAction";
+import SpeedDialIcon from "@mui/material/SpeedDialIcon";
+import { NAV_BAR_HEIGHT, NavBar } from "~/shell/NavBar";
+import { RAINBOW_GRADIENT } from "~/theme";
 
 
 /** The folder new items go into, or undefined where nothing can be created (Recent, Trash…). */
@@ -59,7 +64,7 @@ function StorageMeter() {
 				value={pct}
 				color={pct > 90 ? "error" : pct > 75 ? "warning" : "primary"}
 				aria-label="Storage used"
-				sx={{ height: 4, borderRadius: 2, mb: 1 }}
+				sx={{ height: 6, borderRadius: 1, mb: 1, ...(pct <= 75 && { "& .MuiLinearProgress-bar": { background: RAINBOW_GRADIENT } }) }}
 			/>
 			<Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
 				{formatBytes(data.bytes)} of {formatBytes(data.limit)} used
@@ -110,11 +115,51 @@ function NewMenu({ anchor, onClose, parentId }: { anchor: HTMLElement | null; on
 }
 
 const NAV = [
-	{ to: "/", label: "My Drive", icon: <HomeOutlinedIcon />, match: (p: string) => p === "/" || p.startsWith("/folder/") },
-	{ to: "/recent", label: "Recent", icon: <AccessTimeIcon />, match: (p: string) => p === "/recent" },
-	{ to: "/starred", label: "Starred", icon: <StarBorderIcon />, match: (p: string) => p === "/starred" },
-	{ to: "/trash", label: "Trash", icon: <DeleteOutlineIcon />, match: (p: string) => p === "/trash" },
+	{ to: "/", label: "My Drive", icon: <HomeOutlinedIcon />, color: "#4285f4", match: (p: string) => p === "/" || p.startsWith("/folder/") },
+	{ to: "/recent", label: "Recent", icon: <AccessTimeIcon />, color: "#a142f4", match: (p: string) => p === "/recent" },
+	{ to: "/starred", label: "Starred", icon: <StarBorderIcon />, color: "#fbbc04", match: (p: string) => p === "/starred" },
+	{ to: "/trash", label: "Trash", icon: <DeleteOutlineIcon />, color: "#ea4335", match: (p: string) => p === "/trash" },
 ];
+
+/** Phones: M3 FAB menu (speed dial) for New folder and Upload, above the navigation bar. */
+function NewSpeedDial({ parentId }: { parentId: string | null }) {
+	const d = useDrive();
+	const [open, setOpen] = useState(false);
+	return (
+		<SpeedDial
+			ariaLabel="New"
+			open={open}
+			onOpen={() => setOpen(true)}
+			onClose={() => setOpen(false)}
+			icon={<SpeedDialIcon />}
+			sx={{
+				display: { md: "none" },
+				position: "fixed",
+				right: 16,
+				bottom: `calc(${NAV_BAR_HEIGHT + 16}px + env(safe-area-inset-bottom, 0px))`,
+				"& .MuiSpeedDialAction-staticTooltipLabel": { whiteSpace: "nowrap", borderRadius: 2, boxShadow: 2 },
+				"& .MuiSpeedDial-fab": { borderRadius: 4, bgcolor: "secondary.main", color: "secondary.contrastText", "&:hover": { bgcolor: "secondary.main" } },
+			}}
+		>
+			<SpeedDialAction
+				icon={<CreateNewFolderOutlinedIcon sx={{ color: "#4285f4" }} />}
+				slotProps={{ tooltip: { open: true, title: "New folder" } }}
+				onClick={() => {
+					setOpen(false);
+					d.newFolder(parentId);
+				}}
+			/>
+			<SpeedDialAction
+				icon={<UploadFileOutlinedIcon sx={{ color: "#34a853" }} />}
+				slotProps={{ tooltip: { open: true, title: "Upload files" } }}
+				onClick={() => {
+					setOpen(false);
+					d.uploadFiles(parentId);
+				}}
+			/>
+		</SpeedDial>
+	);
+}
 
 function SidebarContents({ createTarget, onNavigate }: { createTarget: string | null | undefined; onNavigate?: () => void }) {
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -125,7 +170,7 @@ function SidebarContents({ createTarget, onNavigate }: { createTarget: string | 
 			<NewMenu anchor={anchor} onClose={() => setAnchor(null)} parentId={createTarget ?? null} />
 			<List aria-label="Drive sections" disablePadding>
 				{NAV.map((n) => (
-					<SidebarItem key={n.to} to={n.to} icon={n.icon} label={n.label} selected={n.match(pathname)} onClick={onNavigate} />
+					<SidebarItem key={n.to} to={n.to} icon={n.icon} label={n.label} color={n.color} selected={n.match(pathname)} onClick={onNavigate} />
 				))}
 			</List>
 			<StorageMeter />
@@ -134,6 +179,7 @@ function SidebarContents({ createTarget, onNavigate }: { createTarget: string | 
 }
 
 function Shell() {
+	const { pathname: currentPath } = useLocation();
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 	const [q, setQ] = useState(params.get("q") ?? "");
@@ -242,18 +288,12 @@ function Shell() {
 				<SidebarFrame open={mobileOpen} onClose={() => setMobileOpen(false)}>
 					<SidebarContents createTarget={createTarget} onNavigate={() => setMobileOpen(false)} />
 				</SidebarFrame>
-				<Box component="main" sx={{ flex: 1, minWidth: 0, display: "flex", pr: { md: 2 }, pb: { md: 2 } }}>
+				<Box component="main" sx={{ flex: 1, minWidth: 0, display: "flex", pr: { md: 2 }, pb: { xs: `${NAV_BAR_HEIGHT}px`, md: 2 } }}>
 					<Outlet />
 				</Box>
 			</Box>
-			{createTarget !== undefined && (
-				<>
-					<Fab color="secondary" aria-label="New" onClick={(e) => setFabAnchor(e.currentTarget)} sx={{ position: "fixed", right: 16, bottom: "calc(24px + env(safe-area-inset-bottom, 0px))", display: { md: "none" }, borderRadius: 4 }}>
-						<AddIcon />
-					</Fab>
-					<NewMenu anchor={fabAnchor} onClose={() => setFabAnchor(null)} parentId={createTarget} />
-				</>
-			)}
+			{createTarget !== undefined && <NewSpeedDial parentId={createTarget} />}
+			<NavBar items={NAV.map((n) => ({ label: n.label, icon: n.icon, color: n.color, to: n.to, selected: n.match(currentPath) }))} />
 			{dragging && (
 				<Box
 					sx={{
@@ -270,7 +310,7 @@ function Shell() {
 						pb: 6,
 					}}
 				>
-					<Stack direction="row" spacing={1} sx={{ alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", px: 3, py: 1.5, borderRadius: 999, boxShadow: 4 }}>
+					<Stack direction="row" spacing={1} sx={{ alignItems: "center", bgcolor: "primary.main", color: "primary.contrastText", px: 3, py: 1.5, borderRadius: 3, boxShadow: 4 }}>
 						<UploadFileOutlinedIcon />
 						<Typography sx={{ fontWeight: 500 }}>Drop files to upload them here</Typography>
 					</Stack>

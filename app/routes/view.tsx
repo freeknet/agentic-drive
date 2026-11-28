@@ -63,7 +63,7 @@ function Crumb({ id, name, current, items }: { id: string | null; name: string; 
 			void d.moveTo(items.filter((i) => ids.has(i.id)), id);
 		},
 	};
-	const sx = { fontSize: 22, px: 1.5, py: 0.5, borderRadius: 999, color: current ? "text.primary" : "text.secondary", textDecoration: "none", bgcolor: over ? "action.selected" : undefined, "&:hover": current ? undefined : { bgcolor: "action.hover" } };
+	const sx = { fontSize: 22, px: 1.5, py: 0.5, borderRadius: 2, color: current ? "text.primary" : "text.secondary", textDecoration: "none", bgcolor: over ? "action.selected" : undefined, "&:hover": current ? undefined : { bgcolor: "action.hover" } };
 	return current ? (
 		<Typography sx={sx} noWrap {...drop}>
 			{name}
@@ -188,7 +188,7 @@ export default function View() {
 
 	return (
 		<Box sx={{ flex: 1, minWidth: 0, display: "flex", gap: 2 }}>
-			<Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", bgcolor: "background.paper", borderRadius: { md: 4 }, overflow: "hidden" }}>
+			<Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", bgcolor: "background.paper", borderRadius: { md: 3 }, overflow: "hidden" }}>
 				<ViewHeader title={header}>
 					{trash && items.length > 0 && selected.length === 0 && (
 						<Button onClick={() => setConfirmEmpty(true)}>Empty trash</Button>
