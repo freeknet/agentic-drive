@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, contentUrl, type Item } from "~/lib/api";
 import { fileKind, formatBytes, formatDate, formatDateTime, KIND_STYLE } from "~/lib/format";
 import { useDrive } from "./DriveProvider";
+import { Thumbnail } from "~/components/Thumbnail";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
 	return (
@@ -35,7 +36,6 @@ export function DetailsPanel({ items }: { items: Item[] }) {
 		enabled: !!one && one.kind === "file" && !one.trashed_at,
 	});
 	const style = one ? KIND_STYLE[fileKind(one)] : null;
-	const isImage = one && (one.mime ?? "").startsWith("image/") && one.mime !== "image/svg+xml" && !one.trashed_at;
 
 	return (
 		<Box component="aside" aria-label="File information" sx={{ width: { xs: 1, md: 340 }, flexShrink: 0, bgcolor: "background.paper", borderRadius: { md: 4 }, p: 2.5, overflow: "auto" }}>
@@ -56,11 +56,7 @@ export function DetailsPanel({ items }: { items: Item[] }) {
 			) : (
 				<>
 					<Box sx={{ aspectRatio: "16 / 10", borderRadius: 3, bgcolor: "action.hover", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", mb: 2 }}>
-						{isImage ? (
-							<Box component="img" src={contentUrl(one.id)} alt="" sx={{ width: 1, height: 1, objectFit: "contain" }} />
-						) : (
-							style && <style.icon sx={{ fontSize: 72, color: style.color }} />
-						)}
+						<Thumbnail key={one.id} item={one} fit="contain" fallback={style && <style.icon sx={{ fontSize: 72, color: style.color }} />} />
 					</Box>
 					{one.kind === "file" && !one.trashed_at && (
 						<>

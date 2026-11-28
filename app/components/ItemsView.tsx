@@ -21,6 +21,7 @@ import { contentUrl, type Item } from "~/lib/api";
 import { usePrefs } from "~/lib/prefs";
 import { fileKind, formatBytes, formatDate, KIND_STYLE } from "~/lib/format";
 import { useDrive } from "./DriveProvider";
+import { Thumbnail } from "~/components/Thumbnail";
 
 export type Mode = "browse" | "recent" | "starred" | "search" | "trash";
 type SortKey = "name" | "updated" | "size";
@@ -255,7 +256,6 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 				{files.length > 0 && section("Files")}
 				<Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin}px, 1fr))`, gap: 2 }}>
 					{files.map((f) => {
-						const isImage = (f.mime ?? "").startsWith("image/") && f.mime !== "image/svg+xml" && f.size < 15 * 1024 * 1024;
 						return (
 							<Card
 								key={f.id}
@@ -275,11 +275,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 									</IconButton>
 								</Stack>
 								<Box sx={{ aspectRatio: "4 / 3", borderRadius: 2, overflow: "hidden", bgcolor: "background.paper", display: "flex", alignItems: "center", justifyContent: "center" }}>
-									{isImage && !trash ? (
-										<Box component="img" src={contentUrl(f.id)} alt="" loading="lazy" draggable={false} sx={{ width: 1, height: 1, objectFit: "cover" }} />
-									) : (
-										<ItemIcon item={f} size={64} />
-									)}
+									<Thumbnail item={f} fallback={<ItemIcon item={f} size={64} />} />
 								</Box>
 								<Typography variant="caption" sx={{ display: "block", px: 1, pt: 0.75, color: "text.secondary" }} noWrap>
 									{f.starred ? "★ " : ""}
