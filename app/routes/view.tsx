@@ -41,6 +41,7 @@ import { ItemsView, type Mode } from "~/components/ItemsView";
 import { api, ApiError, type Item, type Listing } from "~/lib/api";
 import { ActionButton, EmptyState, SelectionBar, ViewHeader, ViewTitle } from "~/shell/View";
 import { matchesType, SuggestedRow, type TypeFilter, TypeFilterChips } from "~/components/Suggested";
+import Skeleton from "@mui/material/Skeleton";
 
 const DRAG_TYPE = "application/x-drive-items";
 
@@ -227,9 +228,7 @@ export default function View() {
 				<Divider sx={{ display: d.view === "grid" ? "none" : "block", opacity: 0 }} />
 				<Box sx={{ flex: 1, minHeight: 0, overflow: "auto", px: { xs: 1, sm: 2 }, display: "flex", flexDirection: "column" }}>
 					{query.isLoading ? (
-						<Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center", py: 8 }}>
-							<CircularProgress />
-						</Stack>
+						<ItemsSkeleton view={d.view} />
 					) : notFound ? (
 						<Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
 							<EmptyState icon={<FolderOffOutlinedIcon />} title="Folder not found" body="It may have been moved to the trash or deleted." />
@@ -263,6 +262,35 @@ export default function View() {
 					}}
 				/>
 			)}
+		</Box>
+	);
+}
+
+/** Placeholders in the shape of the current view while a folder loads. */
+function ItemsSkeleton({ view }: { view: "list" | "grid" }) {
+	if (view === "grid") {
+		return (
+			<Box aria-busy="true" aria-label="Loading" sx={{ pt: 2, display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(200px, 1fr))" }, gap: { xs: 1, sm: 2 } }}>
+				{Array.from({ length: 8 }, (_, i) => (
+					<Box key={i} sx={{ borderRadius: 3, bgcolor: "action.hover", p: 1 }}>
+						<Skeleton variant="text" width="70%" sx={{ mx: 1, my: 1 }} />
+						<Skeleton variant="rounded" sx={{ aspectRatio: "4 / 3", height: "auto", borderRadius: 2 }} />
+						<Skeleton variant="text" width="45%" sx={{ mx: 1, mt: 1 }} />
+					</Box>
+				))}
+			</Box>
+		);
+	}
+	return (
+		<Box aria-busy="true" aria-label="Loading" sx={{ pt: 1 }}>
+			{Array.from({ length: 8 }, (_, i) => (
+				<Box key={i} sx={{ display: "flex", alignItems: "center", gap: 2, py: 1.5, px: 1, borderBottom: 1, borderColor: "divider" }}>
+					<Skeleton variant="rounded" width={24} height={24} sx={{ borderRadius: 1 }} />
+					<Skeleton variant="text" sx={{ flex: 1, maxWidth: `${40 + ((i * 37) % 35)}%` }} />
+					<Skeleton variant="text" width={80} sx={{ display: { xs: "none", sm: "block" } }} />
+					<Skeleton variant="text" width={60} sx={{ display: { xs: "none", sm: "block" } }} />
+				</Box>
+			))}
 		</Box>
 	);
 }

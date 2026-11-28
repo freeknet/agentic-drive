@@ -236,7 +236,14 @@ export class DriveDO extends DurableObject<Env> {
 				 FROM items WHERE kind = 'file'`,
 			),
 		][0];
-		return { bytes: r.bytes, files: r.files, trashBytes: r.trash };
+		// What the space is used by, per media type (the app groups them into kinds).
+		const byMime = [
+			...this.sql.exec<{ mime: string | null; name: string; bytes: number; files: number }>(
+				`SELECT mime, MIN(name) AS name, COALESCE(SUM(size), 0) AS bytes, COUNT(*) AS files
+				 FROM items WHERE kind = 'file' AND trashed_at IS NULL GROUP BY mime`,
+			),
+		].map((x) => ({ mime: x.mime, name: x.name, bytes: x.bytes, files: x.files }));
+		return { bytes: r.bytes, files: r.files, trashBytes: r.trash, byMime };
 	}
 
 	// ── changing ────────────────────────────────────────────────────

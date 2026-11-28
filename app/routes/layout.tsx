@@ -39,6 +39,8 @@ import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 import { NAV_BAR_HEIGHT, NavBar } from "~/shell/NavBar";
 import { RAINBOW_GRADIENT } from "~/theme";
 import { useRecentSearches } from "~/shell/SearchSuggestions";
+import ButtonBase from "@mui/material/ButtonBase";
+import { StorageDialog } from "~/components/StorageDialog";
 
 
 /** The folder new items go into, or undefined where nothing can be created (Recent, Trash…). */
@@ -52,10 +54,13 @@ function useCreateTarget(): string | null | undefined {
 
 function StorageMeter() {
 	const { data } = useQuery({ queryKey: ["stats"], queryFn: api.stats });
+	const [open, setOpen] = useState(false);
 	if (!data) return null;
 	const pct = Math.min(100, (data.bytes / data.limit) * 100);
 	return (
 		<SidebarFooter>
+			{/* The whole meter opens the breakdown. */}
+			<ButtonBase onClick={() => setOpen(true)} aria-label="Storage details" sx={{ display: "block", width: "100%", textAlign: "left", borderRadius: 2, p: 1, m: -1, "&:hover": { bgcolor: "action.hover" } }}>
 			<Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
 				<CloudOutlinedIcon fontSize="small" sx={{ color: "text.secondary" }} />
 				<Typography variant="body2">Storage</Typography>
@@ -75,6 +80,8 @@ function StorageMeter() {
 					{formatBytes(data.trashBytes)} in the trash
 				</Typography>
 			)}
+			</ButtonBase>
+			<StorageDialog open={open} onClose={() => setOpen(false)} stats={data} />
 		</SidebarFooter>
 	);
 }

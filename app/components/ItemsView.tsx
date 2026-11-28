@@ -23,6 +23,7 @@ import { fileKind, formatBytes, formatDate, KIND_STYLE } from "~/lib/format";
 import { useDrive } from "./DriveProvider";
 import { Thumbnail } from "~/components/Thumbnail";
 import { rainbowFor } from "~/theme";
+import { overlayOpen } from "~/shell/Shortcuts";
 
 export type Mode = "browse" | "recent" | "starred" | "search" | "trash";
 type SortKey = "name" | "updated" | "size";
@@ -156,7 +157,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 	// ── keyboard ─────────────────────────────────────────────────────
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
-			if (isTyping() || document.querySelector('[role="dialog"], [role="menu"]')) return;
+			if (isTyping() || overlayOpen()) return;
 			const sel = sorted.filter((i) => d.selected.has(i.id));
 			if ((e.key === "Delete" || e.key === "Backspace") && sel.length) {
 				e.preventDefault();

@@ -16,7 +16,7 @@ export type Item = {
 
 export type Listing = { folder: Item | null; breadcrumbs: Array<{ id: string; name: string }>; items: Item[] };
 export type Share = { token: string; item_id: string; created_at: number; expires_at: number | null; downloads: number; url: string };
-export type Stats = { bytes: number; files: number; trashBytes: number; limit: number };
+export type Stats = { bytes: number; files: number; trashBytes: number; limit: number; byMime?: { mime: string | null; name: string; bytes: number; files: number }[] };
 
 export class ApiError extends Error {
 	constructor(
