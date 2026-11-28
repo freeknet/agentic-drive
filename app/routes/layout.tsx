@@ -245,7 +245,7 @@ function Shell() {
 			</Box>
 			{createTarget !== undefined && (
 				<>
-					<Fab color="secondary" aria-label="New" onClick={(e) => setFabAnchor(e.currentTarget)} sx={{ position: "fixed", right: 16, bottom: 24, display: { md: "none" }, borderRadius: 4 }}>
+					<Fab color="secondary" aria-label="New" onClick={(e) => setFabAnchor(e.currentTarget)} sx={{ position: "fixed", right: 16, bottom: "calc(24px + env(safe-area-inset-bottom, 0px))", display: { md: "none" }, borderRadius: 4 }}>
 						<AddIcon />
 					</Fab>
 					<NewMenu anchor={fabAnchor} onClose={() => setFabAnchor(null)} parentId={createTarget} />

@@ -231,7 +231,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 		return (
 			<Box {...background} sx={{ flex: 1, pb: 12 }}>
 				{folders.length > 0 && section("Folders")}
-				<Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin}px, 1fr))`, gap: 2 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: `repeat(auto-fill, minmax(${tileMin}px, 1fr))` }, gap: { xs: 1, sm: 2 } }}>
 					{folders.map((f) => (
 						<Card
 							key={f.id}
@@ -254,7 +254,7 @@ export function ItemsView({ items, mode, parentId, empty }: { items: Item[]; mod
 					))}
 				</Box>
 				{files.length > 0 && section("Files")}
-				<Box sx={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin}px, 1fr))`, gap: 2 }}>
+				<Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: `repeat(auto-fill, minmax(${tileMin}px, 1fr))` }, gap: { xs: 1, sm: 2 } }}>
 					{files.map((f) => {
 						return (
 							<Card
