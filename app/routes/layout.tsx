@@ -17,7 +17,7 @@ import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useMatches, useNavigate, useParams, useSearchParams } from "react-router";
 import { DriveProvider, useDrive } from "~/components/DriveProvider";
 import { SettingsDialog } from "~/components/SettingsDialog";
@@ -148,8 +148,11 @@ function Shell() {
 	// Installed app: files opened with Drive ("Open with") or shared to it go into My Drive.
 	useLaunchFiles((files) => enqueue(files, null));
 	const shareId = params.get("share");
+	const handledShare = useRef<string | null>(null);
 	useEffect(() => {
-		if (!shareId) return;
+		// Once per share, even if the effect runs twice while the page starts.
+		if (!shareId || handledShare.current === shareId) return;
+		handledShare.current = shareId;
 		takeShare(shareId)
 			.then((shared) => {
 				if (shared?.files.length) enqueue(shared.files, null);

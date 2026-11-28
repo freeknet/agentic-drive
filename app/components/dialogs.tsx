@@ -136,7 +136,9 @@ export function MoveDialog({ items, onClose, onMove }: { items: Item[]; onClose:
 	const [at, setAt] = useState<string | null>(start);
 	const [busy, setBusy] = useState(false);
 	const moving = new Set(items.map((i) => i.id));
-	const { data, isLoading } = useQuery({ queryKey: ["files", at], queryFn: () => api.list(at) });
+	// Its own cache key: the folder view stores a different shape under ["files", id],
+	// and React Query treats undefined (My Drive in the view) and null alike.
+	const { data, isLoading } = useQuery({ queryKey: ["move-picker", at], queryFn: () => api.list(at) });
 	const folders = (data?.items ?? []).filter((i) => i.kind === "folder" && !moving.has(i.id));
 	const sameFolder = items.every((i) => i.parent_id === at);
 	const title = items.length === 1 ? `Move "${items[0].name}"` : `Move ${items.length} items`;
