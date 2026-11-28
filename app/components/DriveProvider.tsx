@@ -4,7 +4,7 @@
  * item or a selection. Dialogs are hosted here once and opened by actions.
  */
 import { useQueryClient } from "@tanstack/react-query";
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, contentUrl, type Item } from "~/lib/api";
 import { enqueue } from "~/lib/uploads";
 import { ToastCard, ToastStack } from "~/shell/Toast";
@@ -67,6 +67,7 @@ import { usePrefs } from "~/lib/prefs";
 import { confirmDialog } from "~/lib/confirm";
 
 const VIEW_KEY = "drive-view";
+const DETAILS_KEY = "drive-details-open";
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
 const label = (items: Item[]) => (items.length === 1 ? `"${items[0].name}"` : plural(items.length, "item"));
 const errorText = (e: unknown) => (e instanceof ApiError ? e.message : "Something went wrong");
@@ -74,16 +75,41 @@ const errorText = (e: unknown) => (e instanceof ApiError ? e.message : "Somethin
 export function DriveProvider({ children, navigateTo }: { children: ReactNode; navigateTo: (path: string) => void }) {
 	const qc = useQueryClient();
 	const [selected, setSelected] = useState<Set<string>>(new Set());
-	const [view, setViewState] = useState<ViewMode>(() => {
+	// The saved view is read after the first render: the server can't see it,
+	// and reading it earlier left the list/grid switch showing the wrong choice.
+	const [view, setViewState] = useState<ViewMode>("list");
+	const [detailsOpen, setDetailsOpenState] = useState(false);
+	const [dialog, setDialogState] = useState<Dialog>(null);
+	// Remembered across refreshes: the details panel (this browser) and an open
+	// preview (?preview=<id> in the address, so the link reopens it too).
+	const setDetailsOpen = useCallback((open: boolean) => {
+		setDetailsOpenState(open);
 		try {
-			const stored = typeof window !== "undefined" ? (localStorage.getItem(VIEW_KEY) as ViewMode | null) : null;
-			return stored || usePrefs.getState().defaultView;
+			localStorage.setItem(DETAILS_KEY, open ? "1" : "0");
 		} catch {
-			return "list";
+			// private mode
 		}
-	});
-	const [detailsOpen, setDetailsOpen] = useState(false);
-	const [dialog, setDialog] = useState<Dialog>(null);
+	}, []);
+	const setDialog = useCallback((next: Dialog) => {
+		setDialogState(next);
+		const url = new URL(window.location.href);
+		if (next?.kind === "preview") url.searchParams.set("preview", next.item.id);
+		else url.searchParams.delete("preview");
+		if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url);
+	}, []);
+	useEffect(() => {
+		try {
+			if (localStorage.getItem(DETAILS_KEY) === "1") setDetailsOpenState(true);
+			const stored = localStorage.getItem(VIEW_KEY) as ViewMode | null;
+			setViewState(stored || usePrefs.getState().defaultView);
+		} catch {}
+		const id = new URLSearchParams(window.location.search).get("preview");
+		if (id) {
+			api.item(id)
+				.then((item) => !item.trashed_at && item.kind === "file" && setDialogState({ kind: "preview", item, siblings: [item] }))
+				.catch(() => setDialog(null));
+		}
+	}, [setDialog]);
 	const [menu, setMenu] = useState<{ x: number; y: number; target: MenuTarget } | null>(null);
 	const [toast, setToast] = useState<Toast | null>(null);
 	const fileInput = useRef<HTMLInputElement>(null);
