@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import CloudOffIcon from "@mui/icons-material/CloudOffOutlined";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useState } from "react";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { ApiError } from "~/lib/api";
@@ -14,6 +14,7 @@ import { ConfirmHost } from "~/lib/confirm";
 import PreferencesApplier from "~/components/PreferencesApplier";
 import { theme } from "~/theme";
 import { PwaHead, PwaSupport } from "~/shell/pwa";
+import { TopProgress } from "~/shell/Toast";
 
 function makeQueryClient() {
 	return new QueryClient({
@@ -76,6 +77,7 @@ export default function App() {
 		<QueryClientProvider client={queryClient}>
 			<Outlet />
 			<PwaSupport name="Drive" shareLanding="/" />
+			<LoadingBar />
 		</QueryClientProvider>
 	);
 }
@@ -92,4 +94,10 @@ export function ErrorBoundary({ error }: { error: unknown }) {
 			</Button>
 		</Stack>
 	);
+}
+
+/** First loads and saves (not background refreshes) show a thin bar at the top. */
+function LoadingBar() {
+	const loading = useIsFetching({ predicate: (q) => q.state.data === undefined }) + useIsMutating();
+	return <TopProgress active={loading > 0} />;
 }

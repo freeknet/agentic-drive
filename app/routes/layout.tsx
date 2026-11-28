@@ -28,6 +28,9 @@ import { enqueue, onUploaded } from "~/lib/uploads";
 import { AppHeader } from "~/shell/AppHeader";
 import { takeShare, useLaunchFiles } from "~/shell/pwa";
 import { toggleSidebar } from "~/shell/layout";
+import { AccountMenu } from "~/shell/AccountMenu";
+import Button from "@mui/material/Button";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { DriveShortcuts } from "~/components/DriveShortcuts";
 import { SidebarFooter, SidebarFrame, SidebarItem, SidebarPrimaryButton } from "~/shell/Sidebar";
 
@@ -215,6 +218,19 @@ function Shell() {
 					onClear: () => setQ(""),
 				}}
 				settings={{ onClick: () => setSettingsOpen(true) }}
+				account={
+					<AccountMenu>
+						<Button
+							fullWidth
+							color="inherit"
+							startIcon={<SettingsOutlinedIcon />}
+							onClick={() => setSettingsOpen(true)}
+							sx={{ justifyContent: "flex-start", px: 2.5, py: 1.5, borderRadius: 0 }}
+						>
+							Drive settings
+						</Button>
+					</AccountMenu>
+				}
 				onMenuClick={() => toggleSidebar(() => setMobileOpen(true))}
 			/>
 			<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />

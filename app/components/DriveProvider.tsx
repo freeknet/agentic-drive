@@ -3,13 +3,11 @@
  * right-click menu, the snackbar (with Undo), and every item action, for one
  * item or a selection. Dialogs are hosted here once and opened by actions.
  */
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Snackbar from "@mui/material/Snackbar";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, contentUrl, type Item } from "~/lib/api";
 import { enqueue } from "~/lib/uploads";
+import { ToastCard, ToastStack } from "~/shell/Toast";
 import { ContextMenu, type MenuTarget } from "./ContextMenu";
 import { ConfirmDialog, MoveDialog, NameDialog, PreviewDialog, ShareDialog } from "./dialogs";
 
@@ -273,40 +271,18 @@ export function DriveProvider({ children, navigateTo }: { children: ReactNode; n
 					}}
 				/>
 			)}
-			<Snackbar
-				key={toast?.key}
-				open={!!toast}
-				autoHideDuration={toast?.undo ? 8000 : 5000}
-				onClose={(_, reason) => reason !== "clickaway" && setToast(null)}
-				anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-			>
-				{toast ? (
-					<Alert
-						severity={toast.severity ?? "info"}
-						variant="filled"
-						icon={toast.severity === "error" ? undefined : false}
-						onClose={() => setToast(null)}
-						action={
-							toast.undo ? (
-								<Button
-									color="inherit"
-									size="small"
-									onClick={async () => {
-										const undo = toast.undo!;
-										setToast(null);
-										await undo();
-									}}
-								>
-									Undo
-								</Button>
-							) : undefined
-						}
-						sx={{ alignItems: "center", ...(toast.severity !== "error" && { bgcolor: "#323232", color: "#fff" }) }}
-					>
-						{toast.message}
-					</Alert>
-				) : undefined}
-			</Snackbar>
+			{toast && (
+				<ToastStack>
+					<ToastCard
+						key={toast.key}
+						message={toast.message}
+						variant={toast.severity ?? (toast.undo ? "info" : "success")}
+						timeout={toast.undo ? 8000 : 5000}
+						actions={toast.undo ? [{ label: "Undo", onClick: () => void toast.undo!() }] : undefined}
+						onClose={() => setToast((t) => (t?.key === toast.key ? null : t))}
+					/>
+				</ToastStack>
+			)}
 		</Ctx.Provider>
 	);
 }
