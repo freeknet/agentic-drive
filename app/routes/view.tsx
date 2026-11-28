@@ -32,7 +32,7 @@ import SearchOffIcon from "@mui/icons-material/SearchOff";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import { useQuery } from "@tanstack/react-query";
-import { useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useState, type DragEvent, type ReactNode } from "react";
 import { Link as RouterLink, useMatches, useParams, useSearchParams } from "react-router";
 import { DetailsPanel } from "~/components/DetailsPanel";
 import { ConfirmDialog } from "~/components/dialogs";
@@ -40,6 +40,7 @@ import { useDrive } from "~/components/DriveProvider";
 import { ItemsView, type Mode } from "~/components/ItemsView";
 import { api, ApiError, type Item, type Listing } from "~/lib/api";
 import { ActionButton, EmptyState, SelectionBar, ViewHeader, ViewTitle } from "~/shell/View";
+import { matchesType, SuggestedRow, type TypeFilter, TypeFilterChips } from "~/components/Suggested";
 
 const DRAG_TYPE = "application/x-drive-items";
 
@@ -90,6 +91,9 @@ export default function View() {
 	const theme = useTheme();
 	const wide = useMediaQuery(theme.breakpoints.up("md"));
 	const [confirmEmpty, setConfirmEmpty] = useState(false);
+	// Type chips filter what's shown here; they reset when the place changes.
+	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+	useEffect(() => setTypeFilter("all"), [mode, folderId, q]);
 
 	const query = useQuery<{ items: Item[]; listing?: Listing }>({
 		queryKey: mode === "browse" ? ["files", folderId] : mode === "search" ? ["search", q] : [mode],
@@ -219,6 +223,7 @@ export default function View() {
 						Items in the trash are deleted forever after 30 days. Their share links stop working right away.
 					</Alert>
 				)}
+				{!notFound && <TypeFilterChips items={items} value={typeFilter} onChange={setTypeFilter} />}
 				<Divider sx={{ display: d.view === "grid" ? "none" : "block", opacity: 0 }} />
 				<Box sx={{ flex: 1, minHeight: 0, overflow: "auto", px: { xs: 1, sm: 2 }, display: "flex", flexDirection: "column" }}>
 					{query.isLoading ? (
@@ -230,7 +235,10 @@ export default function View() {
 							<EmptyState icon={<FolderOffOutlinedIcon />} title="Folder not found" body="It may have been moved to the trash or deleted." />
 						</Stack>
 					) : (
-						<ItemsView items={items} mode={mode} parentId={parentId} empty={empty} />
+						<>
+							{mode === "browse" && !folderId && typeFilter === "all" && <SuggestedRow />}
+							<ItemsView items={items.filter((i) => matchesType(i, typeFilter))} mode={mode} parentId={parentId} empty={empty} />
+						</>
 					)}
 				</Box>
 			</Box>

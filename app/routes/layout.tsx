@@ -38,6 +38,7 @@ import SpeedDialAction from "@mui/material/SpeedDialAction";
 import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 import { NAV_BAR_HEIGHT, NavBar } from "~/shell/NavBar";
 import { RAINBOW_GRADIENT } from "~/theme";
+import { useRecentSearches } from "~/shell/SearchSuggestions";
 
 
 /** The folder new items go into, or undefined where nothing can be created (Recent, Trash…). */
@@ -183,6 +184,7 @@ function Shell() {
 	const navigate = useNavigate();
 	const [params] = useSearchParams();
 	const [q, setQ] = useState(params.get("q") ?? "");
+	const recent = useRecentSearches("drive-recent-searches");
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [fabAnchor, setFabAnchor] = useState<HTMLElement | null>(null);
 	const [dragging, setDragging] = useState(false);
@@ -262,7 +264,16 @@ function Shell() {
 					value: q,
 					onChange: setQ,
 					onSubmit: () => {
-						if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+						if (!q.trim()) return;
+						recent.add(q);
+						navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+					},
+					recent: recent.items,
+					onRemoveRecent: recent.remove,
+					onPick: (picked) => {
+						setQ(picked);
+						recent.add(picked);
+						navigate(`/search?q=${encodeURIComponent(picked)}`);
 					},
 					onClear: () => setQ(""),
 				}}
